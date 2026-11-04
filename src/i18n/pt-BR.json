@@ -91,7 +91,10 @@
     "timeout": "Tempo limite da requisição (segundos)",
     "updates": "Atualizações",
     "autoUpdate": "Verificar atualizações ao iniciar",
-    "autoUpdateDesc": "Apenas avisa; a instalação acontece só quando você clicar em Sobre › Instalar."
+    "autoUpdateDesc": "Apenas avisa; a instalação acontece só quando você clicar em Sobre › Instalar.",
+    "window": "Janela",
+    "minimizeToTray": "Minimizar para a bandeja do sistema",
+    "minimizeToTrayDesc": "Minimizar e fechar escondem a janela na bandeja; o KokoroKaku continua rodando e os atalhos seguem ativos. Desligado, fechar encerra o app."
   },
   "provider": {
     "welcomeTitle": "Bem-vindo ao KokoroKaku",
@@ -118,7 +121,8 @@
     "modelsLoaded": "{{count}} modelos disponíveis",
     "test": "Testar conexão",
     "testOk": "Conectado em {{ms}} ms ({{model}})",
-    "saveFirst": "Salve as alterações antes de testar."
+    "saveFirst": "Salve as alterações antes de testar.",
+    "customModel": "Outro (digitar ID)…"
   },
   "shortcuts": {
     "popupTitle": "Paleta de ações",
@@ -219,5 +223,13 @@
   },
   "toast": {
     "working": "{{action}}…"
+  },
+  "window": {
+    "minimize": "Minimizar",
+    "minimizeToTray": "Minimizar para a bandeja",
+    "maximize": "Maximizar",
+    "restore": "Restaurar",
+    "close": "Fechar",
+    "closeToTray": "Fechar para a bandeja"
   }
 }

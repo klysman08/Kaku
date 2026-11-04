@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
-import { BarChart3, Info, Keyboard, KeyRound, ListChecks, History, Settings2, Sparkle } from "lucide-react";
+import { BarChart3, Info, Keyboard, KeyRound, ListChecks, History, Settings2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { Highlight } from "@animate-ui/react/primitives/effects/highlight";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { api, type Catalog, type Settings, type ShortcutFailure } from "@/lib/ipc";
@@ -14,6 +16,7 @@ import { ActionsTab } from "./tabs/ActionsTab";
 import { DashboardTab } from "./tabs/DashboardTab";
 import { HistoryTab } from "./tabs/HistoryTab";
 import { AboutTab } from "./tabs/AboutTab";
+import { TitleBar } from "./TitleBar";
 
 export interface TabProps {
   draft: Settings;
@@ -45,6 +48,8 @@ export function App() {
   const [tab, setTab] = useState<string>("provider");
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => scrollRef.current?.scrollTo({ top: 0 }), [tab]);
   const savedRef = useRef<Settings | null>(null);
   const draftRef = useRef<Settings | null>(null);
   savedRef.current = saved;
@@ -118,29 +123,35 @@ export function App() {
 
   return (
     <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="h-full gap-0">
-      <aside className="bg-muted/30 flex w-56 shrink-0 flex-col border-r p-3">
-        <div className="flex items-center gap-2.5 px-2 pt-1 pb-5">
-          <div className="bg-primary text-primary-foreground grid size-8 place-items-center rounded-lg">
-            <Sparkle className="size-4" fill="currentColor" />
-          </div>
-          <div>
+      <aside className="bg-muted/30 flex w-56 shrink-0 flex-col border-r px-3 pb-3">
+        <div data-tauri-drag-region className="flex items-center gap-2.5 px-2 pt-4 pb-6">
+          <img src="/app-icon.svg" alt="" draggable={false} className="pointer-events-none size-8 rounded-lg shadow-sm" />
+          <div className="pointer-events-none">
             <div className="text-sm font-semibold">KokoroKaku</div>
             <div className="text-muted-foreground text-[11px] leading-tight">{t("app.tagline")}</div>
           </div>
         </div>
         <TabsList className="flex-col items-stretch gap-0.5">
-          {TABS.map(({ id, icon: Icon }) => (
-            <TabsTrigger key={id} value={id} className="justify-start">
-              <Icon />
-              {t(`nav.${id}`)}
-            </TabsTrigger>
-          ))}
+          <Highlight
+            value={tab}
+            click={false}
+            className="bg-accent rounded-md"
+            transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          >
+            {TABS.map(({ id, icon: Icon }) => (
+              <TabsTrigger key={id} value={id} data-value={id} className="justify-start data-[state=active]:bg-transparent">
+                <Icon />
+                {t(`nav.${id}`)}
+              </TabsTrigger>
+            ))}
+          </Highlight>
         </TabsList>
       </aside>
 
       <main className="relative flex min-w-0 flex-1 flex-col">
-        <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-3xl px-8 py-7 pb-24">
+        <TitleBar title="" minimizeToTray={saved.minimizeToTray} />
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-3xl px-8 pt-1 pb-24">
             <h1 className="mb-6 text-xl font-semibold tracking-tight">{t(`nav.${tab}`)}</h1>
             <TabsContent value="provider">
               <ProviderTab {...props} />
@@ -166,21 +177,29 @@ export function App() {
           </div>
         </div>
 
-        {(dirty || justSaved) && (
-          <div className="bg-background/95 absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 border-t px-8 py-3 backdrop-blur">
-            <span className="text-muted-foreground mr-auto text-sm">{dirty ? t("common.unsaved") : t("common.saved")}</span>
-            {dirty && (
-              <>
-                <Button variant="ghost" onClick={() => setDraft(saved)}>
-                  {t("common.discard")}
-                </Button>
-                <Button onClick={save} disabled={saving}>
-                  {t("common.save")}
-                </Button>
-              </>
-            )}
-          </div>
-        )}
+        <AnimatePresence>
+          {(dirty || justSaved) && (
+            <motion.div
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 420, damping: 34 }}
+              className="bg-background/95 absolute inset-x-0 bottom-0 flex items-center justify-end gap-2 border-t px-8 py-3 backdrop-blur"
+            >
+              <span className="text-muted-foreground mr-auto text-sm">{dirty ? t("common.unsaved") : t("common.saved")}</span>
+              {dirty && (
+                <>
+                  <Button variant="ghost" onClick={() => setDraft(saved)}>
+                    {t("common.discard")}
+                  </Button>
+                  <Button onClick={save} disabled={saving}>
+                    {t("common.save")}
+                  </Button>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </Tabs>
   );

@@ -52,11 +52,7 @@ export function keyToken(code: string): string | null {
 }
 
 export type RecordResult =
-  | { kind: "combo"; value: string }
-  | { kind: "clear" }
-  | { kind: "cancel" }
-  | { kind: "pending" }
-  | { kind: "needsModifier" };
+  { kind: "combo"; value: string } | { kind: "clear" } | { kind: "cancel" } | { kind: "pending" } | { kind: "needsModifier" };
 
 interface KeyLike {
   code: string;

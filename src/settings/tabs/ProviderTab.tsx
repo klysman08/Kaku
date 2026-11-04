@@ -4,11 +4,14 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { CheckCircle2, ExternalLink, KeyRound, Loader2, PlugZap, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/form";
+import { SimpleSelect } from "@/components/ui/simple-select";
 import { api, type KeyStatus, type ModelInfo, type ProviderKind } from "@/lib/ipc";
 import { describeError } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import type { TabProps } from "../App";
 import { Notice, Row, Section } from "../components";
+
+const CUSTOM = "__custom__";
 
 const PRESETS = [
   { name: "OpenAI", url: "https://api.openai.com/v1" },
@@ -26,13 +29,22 @@ export function ProviderTab({ draft, saved, update, commit }: TabProps) {
   const [newKey, setNewKey] = useState("");
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [busy, setBusy] = useState<"" | "key" | "models" | "test">("");
+  const [customModel, setCustomModel] = useState(false);
   const [result, setResult] = useState<{ tone: "ok" | "error"; title: string; body?: string } | null>(null);
 
+  // Load the model list automatically when the saved provider has a key (or is a local server).
+  const canQuery = provider === saved.provider && (provider === "openai" || !!keyStatus?.configured);
   useEffect(() => {
     setResult(null);
     setModels([]);
+    setCustomModel(false);
     void api.getApiKeyStatus(provider).then(setKeyStatus);
   }, [provider]);
+
+  useEffect(() => {
+    if (!canQuery || !keyStatus) return;
+    api.listModels().then(setModels, () => setModels([]));
+  }, [canQuery, keyStatus, saved.openaiBaseUrl]);
 
   async function run(kind: typeof busy, fn: () => Promise<void>) {
     setBusy(kind);
@@ -79,9 +91,7 @@ export function ProviderTab({ draft, saved, update, commit }: TabProps) {
       {!saved.onboarded && (
         <div className="mb-8">
           <Notice title={t("provider.welcomeTitle")}>
-            <span>
-              {t("provider.welcomeBody", { shortcut: saved.shortcuts.popup })}{" "}
-            </span>
+            <span>{t("provider.welcomeBody", { shortcut: saved.shortcuts.popup })} </span>
             <div className="mt-3">
               <Button size="sm" onClick={() => void commit({ onboarded: true })}>
                 {t("provider.welcomeDone")}
@@ -134,7 +144,14 @@ export function ProviderTab({ draft, saved, update, commit }: TabProps) {
               if (newKey.trim()) void saveKey();
             }}
           >
-            <Input type="password" autoComplete="off" spellCheck={false} placeholder={t("provider.placeholder")} value={newKey} onChange={(e) => setNewKey(e.target.value)} />
+            <Input
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={t("provider.placeholder")}
+              value={newKey}
+              onChange={(e) => setNewKey(e.target.value)}
+            />
             <Button type="submit" disabled={!newKey.trim() || busy === "key"}>
               {t("provider.saveKey")}
             </Button>
@@ -163,19 +180,40 @@ export function ProviderTab({ draft, saved, update, commit }: TabProps) {
         )}
         <Row label={t("provider.model")} stack>
           <div className="flex gap-2">
-            <Input
-              list="model-options"
-              value={draft[modelField]}
-              spellCheck={false}
-              onChange={(e) => update({ [modelField]: e.target.value } as Partial<typeof draft>)}
-            />
-            <datalist id="model-options">
-              {models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </datalist>
+            {customModel || models.length === 0 ? (
+              <Input
+                value={draft[modelField]}
+                spellCheck={false}
+                placeholder="model-id"
+                onChange={(e) => update({ [modelField]: e.target.value } as Partial<typeof draft>)}
+              />
+            ) : (
+              <SimpleSelect
+                className="flex-1"
+                aria-label={t("provider.model")}
+                value={draft[modelField]}
+                onValueChange={(v) => {
+                  if (v === CUSTOM) setCustomModel(true);
+                  else update({ [modelField]: v } as Partial<typeof draft>);
+                }}
+                groups={[
+                  {
+                    options: [
+                      ...(models.some((m) => m.id === draft[modelField]) || !draft[modelField]
+                        ? []
+                        : [{ value: draft[modelField], label: draft[modelField] }]),
+                      ...models.map((m) => ({ value: m.id, label: m.name, hint: m.name !== m.id ? m.id : undefined })),
+                    ],
+                  },
+                  { options: [{ value: CUSTOM, label: t("provider.customModel") }] },
+                ]}
+              />
+            )}
+            {customModel && models.length > 0 && (
+              <Button variant="ghost" onClick={() => setCustomModel(false)}>
+                {t("common.back")}
+              </Button>
+            )}
             <Button variant="outline" onClick={loadModels} disabled={dirty || !!busy} title={dirty ? t("provider.saveFirst") : undefined}>
               {busy === "models" ? <Loader2 className="animate-spin" /> : <RefreshCw />}
               {t("provider.loadModels")}
@@ -192,7 +230,15 @@ export function ProviderTab({ draft, saved, update, commit }: TabProps) {
       </Section>
 
       {result && (
-        <Notice tone={result.tone} title={<span className="inline-flex items-center gap-2">{result.tone === "ok" && <CheckCircle2 className="size-4 text-emerald-500" />}{result.title}</span>}>
+        <Notice
+          tone={result.tone}
+          title={
+            <span className="inline-flex items-center gap-2">
+              {result.tone === "ok" && <CheckCircle2 className="size-4 text-emerald-500" />}
+              {result.title}
+            </span>
+          }
+        >
           {result.body}
         </Notice>
       )}

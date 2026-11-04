@@ -113,3 +113,9 @@ html.transparent,
 html.transparent body {
   background: transparent;
 }
+
+/* Thin, theme-aware scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklch, var(--muted-foreground) 35%, transparent) transparent;
+}

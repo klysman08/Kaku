@@ -70,6 +70,8 @@ pub struct Settings {
     /// "system" | "dark" | "light"
     pub theme: String,
     pub sounds: bool,
+    /// Minimize and close buttons send the window to the tray instead of the taskbar/quitting.
+    pub minimize_to_tray: bool,
 
     pub history_enabled: bool,
     pub history_retention_days: u32,
@@ -104,6 +106,7 @@ impl Default for Settings {
             ui_language: "auto".into(),
             theme: "system".into(),
             sounds: true,
+            minimize_to_tray: true,
             history_enabled: true,
             history_retention_days: 30,
             auto_update: true,

@@ -113,8 +113,21 @@ pub fn run() {
         })
         .on_window_event(|window, event| match (window.label(), event) {
             // Closing the settings window keeps the app running in the tray.
+            // With "minimize to tray" on, closing keeps the app running in the tray;
+            // otherwise closing the settings window quits.
             (windows::MAIN, WindowEvent::CloseRequested { api, .. }) => {
-                api.prevent_close();
+                if minimize_to_tray(window.app_handle()) {
+                    api.prevent_close();
+                    let _ = window.hide();
+                } else {
+                    window.app_handle().exit(0);
+                }
+            }
+            // OS-level minimize (Win+Down, taskbar click) also goes to the tray.
+            (windows::MAIN, WindowEvent::Resized(_))
+                if window.is_minimized().unwrap_or(false)
+                    && minimize_to_tray(window.app_handle()) =>
+            {
                 let _ = window.hide();
             }
             // Clicking outside the palette dismisses it (without stealing focus back).
@@ -149,9 +162,15 @@ pub fn run() {
             commands::shortcut_status,
             commands::suspend_shortcuts,
             commands::app_info,
+            commands::window_minimize,
+            commands::window_close,
         ])
         .run(tauri::generate_context!())
         .expect("error while running KokoroKaku");
+}
+
+fn minimize_to_tray(app: &tauri::AppHandle) -> bool {
+    app.state::<AppState>().settings().minimize_to_tray
 }
 
 /// Background update check: only notifies. Installing happens from Settings › About,

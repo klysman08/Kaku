@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import { ArrowLeft, Check, ClipboardCopy, Globe, Loader2, RotateCcw, Settings, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { Highlight } from "@animate-ui/react/primitives/effects/highlight";
 import { ACTION_ICONS, actionLabel, describeError } from "@/lib/actions";
 import { api, type Catalog, type PopupPayload } from "@/lib/ipc";
 import { playSound } from "@/lib/sound";
@@ -134,13 +136,24 @@ export function Popup() {
           className="text-muted-foreground flex h-9 items-center gap-2 border-b px-3 text-[11px] font-semibold tracking-wider uppercase"
         >
           {view.kind !== "menu" && (
-            <button type="button" className="hover:text-foreground -ml-1 rounded p-0.5" onClick={() => reset(payload)} title={t("common.back")}>
+            <button
+              type="button"
+              className="hover:text-foreground -ml-1 rounded p-0.5"
+              onClick={() => reset(payload)}
+              title={t("common.back")}
+            >
               <ArrowLeft className="size-3.5" />
             </button>
           )}
+          {view.kind === "menu" && <img src="/app-icon.svg" alt="" className="pointer-events-none size-4 rounded" />}
           <span data-tauri-drag-region>KokoroKaku AI Writer</span>
           <div className="ml-auto flex items-center gap-1">
-            <button type="button" className="hover:text-foreground rounded p-0.5" title={t("popup.settings")} onClick={() => void api.openSettings()}>
+            <button
+              type="button"
+              className="hover:text-foreground rounded p-0.5"
+              title={t("popup.settings")}
+              onClick={() => void api.openSettings()}
+            >
               <Settings className="size-3.5" />
             </button>
             <button type="button" className="hover:text-foreground rounded p-0.5" title={t("common.close")} onClick={close}>
@@ -149,126 +162,154 @@ export function Popup() {
           </div>
         </header>
 
-        {view.kind === "menu" && (
-          <div className="p-2">
-            {!payload.hasTarget && (
-              <textarea
-                autoFocus
-                className="bg-muted/40 placeholder:text-muted-foreground mb-2 h-20 w-full resize-none rounded-md border p-2 text-sm outline-none select-text"
-                placeholder={t("popup.placeholder")}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-            )}
-            <div className="grid grid-cols-2 gap-0.5">
-              {actions.map((a, i) => {
-                const Icon = ACTION_ICONS[a.id];
-                return (
-                  <button
-                    key={a.id}
-                    type="button"
-                    autoFocus={payload.hasTarget && i === 0}
-                    onClick={() => void run(a.id)}
-                    className="hover:bg-accent focus-visible:bg-accent group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm outline-none"
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={view.kind}
+            initial={{ opacity: 0, x: view.kind === "menu" ? -12 : 12, filter: "blur(2px)" }}
+            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, filter: "blur(2px)" }}
+            transition={{ type: "spring", stiffness: 420, damping: 36 }}
+          >
+            {view.kind === "menu" && (
+              <div className="p-2">
+                {!payload.hasTarget && (
+                  <textarea
+                    autoFocus
+                    className="bg-muted/40 placeholder:text-muted-foreground mb-2 h-20 w-full resize-none rounded-md border p-2 text-sm outline-none select-text"
+                    placeholder={t("popup.placeholder")}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                  />
+                )}
+                <div className="grid grid-cols-2 gap-0.5">
+                  <Highlight
+                    hover
+                    click={false}
+                    className="bg-accent rounded-md"
+                    transition={{ type: "spring", stiffness: 500, damping: 38 }}
                   >
-                    {Icon && <Icon className="text-muted-foreground group-hover:text-foreground size-4" />}
-                    <span className="truncate">{actionLabel(t, a.id)}</span>
-                    {i < 9 && <span className="text-muted-foreground/60 ml-auto text-[10px] tabular-nums">{i + 1}</span>}
-                  </button>
-                );
-              })}
-            </div>
-            {showTranslate && (
-              <div className="bg-muted/50 mt-2 flex items-center gap-2 rounded-lg p-1">
-                <button
-                  type="button"
-                  onClick={() => void run("translate")}
-                  className="hover:bg-accent flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-sm font-medium"
-                >
-                  <Globe className="size-4" />
-                  {t("popup.translateTo")}
-                </button>
-                <select
-                  aria-label={t("general.targetLanguage")}
-                  className="text-muted-foreground hover:text-foreground max-w-36 cursor-pointer rounded-md bg-transparent px-1 py-1 text-xs outline-none [&>option]:bg-popover"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  {catalog?.languages.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
+                    {actions.map((a, i) => {
+                      const Icon = ACTION_ICONS[a.id];
+                      return (
+                        <button
+                          key={a.id}
+                          data-value={a.id}
+                          type="button"
+                          autoFocus={payload.hasTarget && i === 0}
+                          onClick={() => void run(a.id)}
+                          className="focus-visible:ring-ring/60 group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm outline-none focus-visible:ring-2"
+                        >
+                          {Icon && <Icon className="text-muted-foreground group-hover:text-foreground size-4" />}
+                          <span className="truncate">{actionLabel(t, a.id)}</span>
+                          {i < 9 && <span className="text-muted-foreground/60 ml-auto text-[10px] tabular-nums">{i + 1}</span>}
+                        </button>
+                      );
+                    })}
+                  </Highlight>
+                </div>
+                {showTranslate && (
+                  <div className="bg-muted/50 mt-2 flex items-center gap-2 rounded-lg p-1">
+                    <button
+                      type="button"
+                      onClick={() => void run("translate")}
+                      className="hover:bg-accent flex flex-1 items-center justify-center gap-2 rounded-md py-1.5 text-sm font-medium"
+                    >
+                      <Globe className="size-4" />
+                      {t("popup.translateTo")}
+                    </button>
+                    <select
+                      aria-label={t("general.targetLanguage")}
+                      className="text-muted-foreground hover:text-foreground max-w-36 cursor-pointer rounded-md bg-transparent px-1 py-1 text-xs outline-none [&>option]:bg-popover"
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                    >
+                      {catalog?.languages.map((l) => (
+                        <option key={l} value={l}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <p className="text-muted-foreground/70 mt-2 text-center text-[10px]">{t("popup.hint")}</p>
               </div>
             )}
-            <p className="text-muted-foreground/70 mt-2 text-center text-[10px]">{t("popup.hint")}</p>
-          </div>
-        )}
 
-        {view.kind === "working" && (
-          <div className="text-muted-foreground flex h-40 flex-col items-center justify-center gap-3 text-sm">
-            <Loader2 className="size-5 animate-spin" />
-            {t("popup.working", { action: actionLabel(t, view.action) })}
-          </div>
-        )}
+            {view.kind === "working" && (
+              <div className="text-muted-foreground flex h-40 flex-col items-center justify-center gap-3 text-sm">
+                <Loader2 className="size-5 animate-spin" />
+                {t("popup.working", { action: actionLabel(t, view.action) })}
+              </div>
+            )}
 
-        {view.kind === "result" && (
-          <div className="p-2">
-            <label className="text-muted-foreground mb-1 block px-1 text-[11px]">{t("popup.result")}</label>
-            <textarea
-              ref={resultRef}
-              key={view.text}
-              defaultValue={view.text}
-              autoFocus
-              className="bg-muted/40 h-44 w-full resize-none rounded-md border p-2 text-sm leading-relaxed outline-none select-text"
-            />
-            {!payload.hasTarget && <p className="text-muted-foreground px-1 pt-1 text-[11px]">{t("popup.noTarget")}</p>}
-            <div className="mt-2 flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => void run(view.action)}
-                className="hover:bg-accent text-muted-foreground hover:text-foreground rounded-md p-2"
-                title={t("common.retry")}
-              >
-                <RotateCcw className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => void copy()}
-                className="hover:bg-accent flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm"
-              >
-                {copied ? <Check className="size-4 text-emerald-500" /> : <ClipboardCopy className="size-4" />}
-                {copied ? t("common.copied") : t("popup.copyResult")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void apply()}
-                className={cn(
-                  "bg-primary text-primary-foreground hover:bg-primary/90 ml-auto flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
-                )}
-              >
-                <Check className="size-4" />
-                {payload.hasTarget ? t("popup.replace") : t("popup.copyResult")}
-              </button>
-            </div>
-          </div>
-        )}
+            {view.kind === "result" && (
+              <div className="p-2">
+                <label className="text-muted-foreground mb-1 block px-1 text-[11px]">{t("popup.result")}</label>
+                <textarea
+                  ref={resultRef}
+                  key={view.text}
+                  defaultValue={view.text}
+                  autoFocus
+                  className="bg-muted/40 h-44 w-full resize-none rounded-md border p-2 text-sm leading-relaxed outline-none select-text"
+                />
+                {!payload.hasTarget && <p className="text-muted-foreground px-1 pt-1 text-[11px]">{t("popup.noTarget")}</p>}
+                <div className="mt-2 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void run(view.action)}
+                    className="hover:bg-accent text-muted-foreground hover:text-foreground rounded-md p-2"
+                    title={t("common.retry")}
+                  >
+                    <RotateCcw className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void copy()}
+                    className="hover:bg-accent flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm"
+                  >
+                    {copied ? <Check className="size-4 text-emerald-500" /> : <ClipboardCopy className="size-4" />}
+                    {copied ? t("common.copied") : t("popup.copyResult")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void apply()}
+                    className={cn(
+                      "bg-primary text-primary-foreground hover:bg-primary/90 ml-auto flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
+                    )}
+                  >
+                    <Check className="size-4" />
+                    {payload.hasTarget ? t("popup.replace") : t("popup.copyResult")}
+                  </button>
+                </div>
+              </div>
+            )}
 
-        {view.kind === "error" && (
-          <div className="p-3">
-            <div className="text-destructive text-sm font-medium">{view.title}</div>
-            <p className="text-muted-foreground mt-1.5 max-h-32 overflow-y-auto text-xs whitespace-pre-line select-text">{view.detail}</p>
-            <div className="mt-3 flex gap-1.5">
-              <button type="button" onClick={() => void run(view.action)} className="hover:bg-accent flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm">
-                <RotateCcw className="size-4" /> {t("common.retry")}
-              </button>
-              <button type="button" onClick={() => void api.openSettings("provider")} className="hover:bg-accent flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm">
-                <Settings className="size-4" /> {t("popup.settings")}
-              </button>
-            </div>
-          </div>
-        )}
+            {view.kind === "error" && (
+              <div className="p-3">
+                <div className="text-destructive text-sm font-medium">{view.title}</div>
+                <p className="text-muted-foreground mt-1.5 max-h-32 overflow-y-auto text-xs whitespace-pre-line select-text">
+                  {view.detail}
+                </p>
+                <div className="mt-3 flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => void run(view.action)}
+                    className="hover:bg-accent flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm"
+                  >
+                    <RotateCcw className="size-4" /> {t("common.retry")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void api.openSettings("provider")}
+                    className="hover:bg-accent flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm"
+                  >
+                    <Settings className="size-4" /> {t("popup.settings")}
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

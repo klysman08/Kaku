@@ -91,7 +91,10 @@
     "timeout": "Request timeout (seconds)",
     "updates": "Updates",
     "autoUpdate": "Check for updates on startup",
-    "autoUpdateDesc": "Only notifies; installing happens when you click About › Install."
+    "autoUpdateDesc": "Only notifies; installing happens when you click About › Install.",
+    "window": "Window",
+    "minimizeToTray": "Minimize to system tray",
+    "minimizeToTrayDesc": "Minimize and close hide the window in the tray; KokoroKaku keeps running and shortcuts stay active. When off, closing quits the app."
   },
   "provider": {
     "welcomeTitle": "Welcome to KokoroKaku",
@@ -118,7 +121,8 @@
     "modelsLoaded": "{{count}} models available",
     "test": "Test connection",
     "testOk": "Connected in {{ms}} ms ({{model}})",
-    "saveFirst": "Save your changes before testing."
+    "saveFirst": "Save your changes before testing.",
+    "customModel": "Other (type an ID)…"
   },
   "shortcuts": {
     "popupTitle": "Action palette",
@@ -219,5 +223,13 @@
   },
   "toast": {
     "working": "{{action}}…"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "minimizeToTray": "Minimize to tray",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close",
+    "closeToTray": "Close to tray"
   }
 }

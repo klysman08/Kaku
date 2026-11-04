@@ -4,7 +4,10 @@ import { listen } from "@tauri-apps/api/event";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input, NativeSelect } from "@/components/ui/form";
+import { Input } from "@/components/ui/form";
+import { SimpleSelect } from "@/components/ui/simple-select";
+import { CountingNumber } from "@animate-ui/react/primitives/texts/counting-number";
+import { motion } from "motion/react";
 import { ACTION_ICONS, actionLabel } from "@/lib/actions";
 import { estimateCost, fillDays, formatNumber, formatUsd } from "@/lib/cost";
 import { api, type KeyBucket, type UsageSummary } from "@/lib/ipc";
@@ -13,14 +16,26 @@ import { Notice, Row, Section } from "../components";
 
 const PERIODS = [7, 30, 90, 0];
 
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Stat({ label, value, hint, index }: { label: string; value: React.ReactNode; hint?: string; index: number }) {
   return (
-    <div className="bg-card rounded-xl border p-4">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 30 }}
+      className="bg-card rounded-xl border p-4"
+    >
       <div className="text-muted-foreground text-xs font-medium">{label}</div>
       <div className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight">{value}</div>
       {hint && <div className="text-muted-foreground mt-1 text-xs">{hint}</div>}
-    </div>
+    </motion.div>
   );
+}
+
+/** Animated count-up (Animate UI) for integers; very large values use compact text. */
+function Count({ n, locale }: { n: number; locale: string }) {
+  if (n >= 100_000) return <>{formatNumber(n, locale)}</>;
+  const sep = new Intl.NumberFormat(locale).format(1000).charAt(1);
+  return <CountingNumber number={n} thousandSeparator={/[0-9]/.test(sep) ? "" : sep} transition={{ stiffness: 120, damping: 30 }} />;
 }
 
 function Bars({ rows, label, locale }: { rows: KeyBucket[]; label: (k: string) => React.ReactNode; locale: string }) {
@@ -31,7 +46,12 @@ function Bars({ rows, label, locale }: { rows: KeyBucket[]; label: (k: string) =
         <div key={r.key} className="grid grid-cols-[10rem_1fr_3rem] items-center gap-3 text-sm">
           <span className="truncate">{label(r.key)}</span>
           <div className="bg-muted h-2 overflow-hidden rounded-full">
-            <div className="bg-primary h-full rounded-full" style={{ width: `${(r.requests / max) * 100}%` }} />
+            <motion.div
+              className="bg-primary h-full rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${(r.requests / max) * 100}%` }}
+              transition={{ type: "spring", stiffness: 140, damping: 24 }}
+            />
           </div>
           <span className="text-muted-foreground text-right tabular-nums">{formatNumber(r.requests, locale)}</span>
         </div>
@@ -82,27 +102,37 @@ export function DashboardTab({ draft, update }: TabProps) {
   return (
     <div>
       <div className="mb-5 flex items-center justify-between">
-        <NativeSelect className="w-48" value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label={t("dashboard.period")}>
-          {PERIODS.map((d) => (
-            <option key={d} value={d}>
-              {d ? t("dashboard.last", { count: d }) : t("dashboard.allTime")}
-            </option>
-          ))}
-        </NativeSelect>
+        <SimpleSelect
+          aria-label={t("dashboard.period")}
+          value={String(days)}
+          onValueChange={(v) => setDays(Number(v))}
+          options={PERIODS.map((d) => ({ value: String(d), label: d ? t("dashboard.last", { count: d }) : t("dashboard.allTime") }))}
+        />
         <Button variant="ghost" size="sm" onClick={reset}>
           <RotateCcw /> {t("dashboard.reset")}
         </Button>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label={t("dashboard.requests")} value={formatNumber(totals.requests, locale)} hint={t("dashboard.errorRate", { rate: errorRate })} />
         <Stat
+          index={0}
+          label={t("dashboard.requests")}
+          value={<Count n={totals.requests} locale={locale} />}
+          hint={t("dashboard.errorRate", { rate: errorRate })}
+        />
+        <Stat
+          index={1}
           label={t("dashboard.tokens")}
-          value={formatNumber(totals.inputTokens + totals.outputTokens, locale)}
+          value={<Count n={totals.inputTokens + totals.outputTokens} locale={locale} />}
           hint={`${t("dashboard.input")} ${formatNumber(totals.inputTokens, locale)} · ${t("dashboard.output")} ${formatNumber(totals.outputTokens, locale)}`}
         />
-        <Stat label={t("dashboard.latency")} value={`${(totals.avgLatencyMs / 1000).toFixed(1)} s`} />
-        <Stat label={t("dashboard.cost")} value={formatUsd(cost, locale)} hint={Object.keys(draft.pricing).length ? undefined : t("dashboard.costHint")} />
+        <Stat index={2} label={t("dashboard.latency")} value={`${(totals.avgLatencyMs / 1000).toFixed(1)} s`} />
+        <Stat
+          index={3}
+          label={t("dashboard.cost")}
+          value={formatUsd(cost, locale)}
+          hint={Object.keys(draft.pricing).length ? undefined : t("dashboard.costHint")}
+        />
       </div>
 
       {totals.requests === 0 ? (
@@ -114,7 +144,15 @@ export function DashboardTab({ draft, update }: TabProps) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chart} margin={{ top: 4, right: 4, bottom: 0, left: -12 }}>
                   <CartesianGrid vertical={false} stroke="var(--border)" />
-                  <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)" interval="preserveStartEnd" minTickGap={16} />
+                  <XAxis
+                    dataKey="label"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={11}
+                    stroke="var(--muted-foreground)"
+                    interval="preserveStartEnd"
+                    minTickGap={16}
+                  />
                   <YAxis tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)" allowDecimals={false} />
                   <Tooltip
                     cursor={{ fill: "var(--accent)" }}
@@ -151,30 +189,32 @@ export function DashboardTab({ draft, update }: TabProps) {
       )}
 
       <Section title={t("dashboard.pricing")} description={t("dashboard.pricingDesc")}>
-        {[...new Set([draft.provider === "gemini" ? draft.geminiModel : draft.openaiModel, ...data.byModel.map((m) => m.key)])].map((model) => (
-          <Row key={model} label={<span className="font-mono text-xs">{model}</span>}>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">{t("dashboard.priceInput")}</span>
-              <Input
-                type="number"
-                min={0}
-                step="0.01"
-                className="h-8 w-24"
-                value={draft.pricing[model]?.input ?? ""}
-                onChange={(e) => setPrice(model, "input", Number(e.target.value))}
-              />
-              <span className="text-muted-foreground ml-2">{t("dashboard.priceOutput")}</span>
-              <Input
-                type="number"
-                min={0}
-                step="0.01"
-                className="h-8 w-24"
-                value={draft.pricing[model]?.output ?? ""}
-                onChange={(e) => setPrice(model, "output", Number(e.target.value))}
-              />
-            </div>
-          </Row>
-        ))}
+        {[...new Set([draft.provider === "gemini" ? draft.geminiModel : draft.openaiModel, ...data.byModel.map((m) => m.key)])].map(
+          (model) => (
+            <Row key={model} label={<span className="font-mono text-xs">{model}</span>}>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">{t("dashboard.priceInput")}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="h-8 w-24"
+                  value={draft.pricing[model]?.input ?? ""}
+                  onChange={(e) => setPrice(model, "input", Number(e.target.value))}
+                />
+                <span className="text-muted-foreground ml-2">{t("dashboard.priceOutput")}</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="h-8 w-24"
+                  value={draft.pricing[model]?.output ?? ""}
+                  onChange={(e) => setPrice(model, "output", Number(e.target.value))}
+                />
+              </div>
+            </Row>
+          ),
+        )}
       </Section>
     </div>
   );

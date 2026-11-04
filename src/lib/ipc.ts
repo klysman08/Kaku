@@ -22,6 +22,7 @@ export interface Settings {
   uiLanguage: "auto" | "pt-BR" | "en";
   theme: "system" | "dark" | "light";
   sounds: boolean;
+  minimizeToTray: boolean;
   historyEnabled: boolean;
   historyRetentionDays: number;
   autoUpdate: boolean;
@@ -142,15 +143,13 @@ export const api = {
   deleteApiKey: (provider: ProviderKind) => invoke<void>("delete_api_key", { provider }),
   testConnection: () => invoke<{ latencyMs: number; model: string; reply: string }>("test_connection"),
   listModels: () => invoke<ModelInfo[]>("list_models"),
-  runAction: (action: string, text: string, targetLanguage?: string) =>
-    invoke<Completion>("run_action", { action, text, targetLanguage }),
+  runAction: (action: string, text: string, targetLanguage?: string) => invoke<Completion>("run_action", { action, text, targetLanguage }),
   popupState: () => invoke<PopupPayload>("popup_state"),
   popupApply: (text: string) => invoke<"pasted" | "copied">("popup_apply", { text }),
   popupClose: () => invoke<void>("popup_close"),
   copyText: (text: string) => invoke<void>("copy_text", { text }),
   openSettings: (tab?: string) => invoke<void>("open_settings", { tab }),
-  usageSummary: (days: number) =>
-    invoke<UsageSummary>("usage_summary", { days, tzOffsetSecs: -new Date().getTimezoneOffset() * 60 }),
+  usageSummary: (days: number) => invoke<UsageSummary>("usage_summary", { days, tzOffsetSecs: -new Date().getTimezoneOffset() * 60 }),
   resetUsage: () => invoke<void>("reset_usage"),
   listHistory: (query: string, limit: number, offset: number) =>
     invoke<{ items: HistoryItem[]; total: number }>("list_history", { query, limit, offset }),

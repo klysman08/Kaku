@@ -234,6 +234,26 @@ pub fn suspend_shortcuts(app: AppHandle, suspended: bool) -> Vec<ShortcutFailure
     }
 }
 
+/// Title-bar minimize button: to the tray or to the taskbar, per settings.
+#[tauri::command]
+pub fn window_minimize(window: tauri::WebviewWindow, state: State<AppState>) {
+    if state.settings().minimize_to_tray {
+        let _ = window.hide();
+    } else {
+        let _ = window.minimize();
+    }
+}
+
+/// Title-bar close button: hide to the tray, or quit the app.
+#[tauri::command]
+pub fn window_close(app: AppHandle, window: tauri::WebviewWindow, state: State<AppState>) {
+    if state.settings().minimize_to_tray {
+        let _ = window.hide();
+    } else {
+        app.exit(0);
+    }
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppInfo {

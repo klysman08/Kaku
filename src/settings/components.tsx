@@ -2,7 +2,17 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /** A titled group of settings rows. */
-export function Section({ title, description, children, className }: { title: string; description?: ReactNode; children: ReactNode; className?: string }) {
+export function Section({
+  title,
+  description,
+  children,
+  className,
+}: {
+  title: string;
+  description?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={cn("mb-8", className)}>
       <h2 className="text-sm font-semibold">{title}</h2>
@@ -13,7 +23,17 @@ export function Section({ title, description, children, className }: { title: st
 }
 
 /** Label + description on the left, control on the right. */
-export function Row({ label, description, children, stack }: { label: ReactNode; description?: ReactNode; children?: ReactNode; stack?: boolean }) {
+export function Row({
+  label,
+  description,
+  children,
+  stack,
+}: {
+  label: ReactNode;
+  description?: ReactNode;
+  children?: ReactNode;
+  stack?: boolean;
+}) {
   return (
     <div className={cn("flex gap-4 px-4 py-3.5", stack ? "flex-col" : "items-center justify-between")}>
       <div className="min-w-0">
@@ -33,7 +53,15 @@ export function Kbd({ children }: { children: ReactNode }) {
   );
 }
 
-export function Notice({ tone = "info", title, children }: { tone?: "info" | "warn" | "error" | "ok"; title?: ReactNode; children?: ReactNode }) {
+export function Notice({
+  tone = "info",
+  title,
+  children,
+}: {
+  tone?: "info" | "warn" | "error" | "ok";
+  title?: ReactNode;
+  children?: ReactNode;
+}) {
   const tones = {
     info: "border-border bg-muted/40",
     warn: "border-amber-500/40 bg-amber-500/10",

@@ -43,7 +43,9 @@ export function ActionsTab({ draft, update, catalog }: TabProps) {
                 {Icon && <Icon className="text-muted-foreground size-4" />}
                 <span className="text-sm font-medium">{actionLabel(t, a.id)}</span>
                 {hasCustom && (
-                  <Badge variant={valid ? "secondary" : "destructive"}>{valid ? t("actionsTab.usingCustom") : t("actionsTab.invalid")}</Badge>
+                  <Badge variant={valid ? "secondary" : "destructive"}>
+                    {valid ? t("actionsTab.usingCustom") : t("actionsTab.invalid")}
+                  </Badge>
                 )}
                 <div className="ml-auto flex items-center gap-3">
                   <label className="text-muted-foreground flex items-center gap-2 text-xs">
@@ -67,7 +69,9 @@ export function ActionsTab({ draft, update, catalog }: TabProps) {
                     aria-invalid={!valid}
                   />
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-xs">{hasCustom ? t("actionsTab.usingCustom") : t("actionsTab.usingDefault")}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {hasCustom ? t("actionsTab.usingCustom") : t("actionsTab.usingDefault")}
+                    </span>
                     <Button variant="outline" size="sm" disabled={!hasCustom} onClick={() => setPrompt(a.id, null)}>
                       <RotateCcw /> {t("common.reset")}
                     </Button>

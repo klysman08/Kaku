@@ -69,12 +69,19 @@ export function ShortcutRecorder({ value, onChange, error }: { value: string; on
           )}
         </button>
         {value && !recording && (
-          <button type="button" className="text-muted-foreground hover:text-foreground rounded p-1" title={t("shortcuts.remove")} onClick={() => onChange("")}>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground rounded p-1"
+            title={t("shortcuts.remove")}
+            onClick={() => onChange("")}
+          >
             <X className="size-4" />
           </button>
         )}
       </div>
-      {(hint || error) && <span className={cn("text-xs", error && !hint ? "text-destructive" : "text-muted-foreground")}>{hint ?? error}</span>}
+      {(hint || error) && (
+        <span className={cn("text-xs", error && !hint ? "text-destructive" : "text-muted-foreground")}>{hint ?? error}</span>
+      )}
     </div>
   );
 }

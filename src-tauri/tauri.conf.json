@@ -18,10 +18,12 @@
         "url": "index.html",
         "width": 1000,
         "height": 720,
-        "minWidth": 820,
+        "minWidth": 860,
         "minHeight": 560,
         "center": true,
-        "visible": false
+        "visible": false,
+        "decorations": false,
+        "shadow": true
       }
     ],
     "security": {

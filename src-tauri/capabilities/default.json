@@ -2,7 +2,11 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Permissions for the KokoroKaku windows (settings, popup palette, progress toast).",
-  "windows": ["main", "popup", "toast"],
+  "windows": [
+    "main",
+    "popup",
+    "toast"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-set-size",
@@ -17,6 +21,9 @@
     "autostart:allow-is-enabled",
     "updater:default",
     "process:allow-restart",
-    "log:default"
+    "log:default",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-is-maximized",
+    "core:window:allow-internal-toggle-maximize"
   ]
 }

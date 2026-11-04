@@ -53,7 +53,9 @@ export function ShortcutsTab({ draft, saved, update, commit, catalog, failures }
         <div className="mb-6">
           <Notice tone="warn" title={t("shortcuts.waylandTitle")}>
             {t("shortcuts.waylandBody")}
-            <pre className="bg-muted mt-2 rounded-md p-2 font-mono text-xs">kokorokaku --action review --clipboard{"\n"}kokorokaku --popup</pre>
+            <pre className="bg-muted mt-2 rounded-md p-2 font-mono text-xs">
+              kokorokaku --action review --clipboard{"\n"}kokorokaku --popup
+            </pre>
           </Notice>
         </div>
       )}
