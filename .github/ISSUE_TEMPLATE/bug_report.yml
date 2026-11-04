@@ -1,0 +1,36 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: KokoroKaku version
+      description: Settings › About
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows 11, Windows 10, Linux (X11), Linux (Wayland)]
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: Target application
+      description: Where you selected the text (e.g. Outlook, Teams, Chrome, VS Code)
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce and what happened
+      description: Please do not paste private text or API keys.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant lines from the log folder shown in Settings › About (logs never contain your text).
+      render: text

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "KokoroKaku",
+  "mainBinaryName": "kokorokaku",
+  "version": "../package.json",
+  "identifier": "io.github.klysman08.kokorokaku",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "KokoroKaku",
+        "url": "index.html",
+        "width": 1000,
+        "height": 720,
+        "minWidth": 820,
+        "minHeight": 560,
+        "center": true,
+        "visible": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "msi",
+      "deb",
+      "rpm",
+      "appimage"
+    ],
+    "createUpdaterArtifacts": true,
+    "publisher": "KokoroKaku contributors",
+    "copyright": "MIT License",
+    "category": "Productivity",
+    "shortDescription": "AI writing actions for any app",
+    "longDescription": "Select text in any application and rewrite, correct, translate or change its tone with a global shortcut.",
+    "homepage": "https://github.com/klysman08/KokoroKaku",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "signCommand": {
+        "cmd": "pwsh",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "../scripts/sign-windows.ps1",
+          "%1"
+        ]
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": [
+          "English",
+          "PortugueseBR"
+        ],
+        "displayLanguageSelector": false
+      },
+      "wix": {
+        "language": [
+          "en-US"
+        ]
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY0NDg0NDA2NzZFRkZENTcKUldSWC9lOTJCa1JJWk4rZWNtVTVYblpnbVZNWXBZTUE1YmZTemx4cEhDTmJBNHB0Njg4eVJkeGUK",
+      "endpoints": [
+        "https://github.com/klysman08/KokoroKaku/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
