@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { BarChart3, Info, Keyboard, KeyRound, ListChecks, History, Settings2 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Highlight } from "@animate-ui/react/primitives/effects/highlight";
@@ -148,6 +149,7 @@ export function App() {
             ))}
           </Highlight>
         </TabsList>
+        <SidebarFooter />
       </aside>
 
       <main className="relative flex min-w-0 flex-1 flex-col">
@@ -204,5 +206,29 @@ export function App() {
         </AnimatePresence>
       </main>
     </Tabs>
+  );
+}
+
+const AUTHOR_URL = "https://github.com/klysman08";
+
+/** Credits and the running version, pinned to the bottom of the sidebar. */
+function SidebarFooter() {
+  const { t } = useTranslation();
+  const [version, setVersion] = useState("");
+  useEffect(() => {
+    void api.appInfo().then((i) => setVersion(i.version));
+  }, []);
+  return (
+    <div className="text-muted-foreground mt-auto flex items-center justify-between gap-2 border-t px-2 pt-3 text-[11px]">
+      <button
+        type="button"
+        onClick={() => void openUrl(AUTHOR_URL)}
+        title={AUTHOR_URL}
+        className="hover:text-foreground truncate transition-colors"
+      >
+        {t("app.madeBy")} <span className="text-foreground/80 font-medium">@klysman08</span>
+      </button>
+      {version && <span className="shrink-0 tabular-nums">v{version}</span>}
+    </div>
   );
 }
