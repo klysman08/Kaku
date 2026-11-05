@@ -171,6 +171,7 @@ pub async fn speech_info() -> speech::SpeechInfo {
         .await
         .unwrap_or(speech::SpeechInfo {
             native: false,
+            voice_typing: false,
             native_languages: Vec::new(),
             system_language: String::new(),
         })

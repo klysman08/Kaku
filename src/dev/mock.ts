@@ -174,6 +174,7 @@ function handle(cmd: string, args: Record<string, unknown> | undefined): unknown
     case "speech_info":
       return {
         native: true,
+        voiceTyping: true,
         nativeLanguages: [
           { tag: "en-US", name: "English (United States)" },
           { tag: "pt-BR", name: "Português (Brasil)" },

@@ -58,6 +58,7 @@ export function Popup() {
   const [copied, setCopied] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLTextAreaElement>(null);
+  const textBoxRef = useRef<HTMLTextAreaElement>(null);
   const requestId = useRef(0);
   // Latest text-box value, also updated by dictation before React re-renders.
   const inputRef = useRef("");
@@ -253,6 +254,7 @@ export function Popup() {
                     <div className="mb-2">
                       <div className="relative">
                         <textarea
+                          ref={textBoxRef}
                           autoFocus
                           className="bg-muted/40 placeholder:text-muted-foreground block h-20 w-full resize-none rounded-md border p-2 pr-10 text-sm outline-none select-text"
                           placeholder={payload.canReplace ? t("popup.placeholderNoCopy") : t("popup.placeholder")}
@@ -263,14 +265,27 @@ export function Popup() {
                         <MicButton
                           state={dictation.state}
                           level={dictation.level}
-                          label={dictation.active ? t("popup.stopDictation") : t("popup.dictate")}
-                          onClick={dictation.toggle}
+                          label={
+                            settings?.speechEngine === "voice_typing"
+                              ? t("popup.voiceTyping")
+                              : dictation.active
+                                ? t("popup.stopDictation")
+                                : t("popup.dictate")
+                          }
+                          onClick={() => {
+                            // Windows voice typing writes into the focused field.
+                            textBoxRef.current?.focus();
+                            dictation.toggle();
+                          }}
                         />
                       </div>
                       {dictation.state === "listening" && (
                         <p className="text-muted-foreground mt-1 truncate px-1 text-[11px]">
                           {dictation.partial ? <span className="italic">{dictation.partial}</span> : t("popup.listening")}
                         </p>
+                      )}
+                      {dictation.voiceTyping && dictation.state === "idle" && (
+                        <p className="text-muted-foreground mt-1 px-1 text-[11px] leading-snug">{t("popup.voiceTypingHint")}</p>
                       )}
                       {dictation.state === "transcribing" && (
                         <p className="text-muted-foreground mt-1 px-1 text-[11px]">{t("popup.transcribing")}</p>
@@ -453,6 +468,8 @@ function MicButton({
       aria-label={label}
       aria-pressed={listening}
       disabled={busy}
+      // Keep the caret in the text box (voice typing types where the focus is).
+      onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       className={cn(
         "absolute right-1.5 bottom-1.5 grid size-7 place-items-center rounded-full transition-colors",

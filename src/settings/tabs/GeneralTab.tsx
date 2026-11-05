@@ -38,6 +38,15 @@ export function GeneralTab({ draft, update, catalog }: TabProps) {
   }, []);
 
   const native = draft.speechEngine === "native";
+  const voiceTyping = draft.speechEngine === "voice_typing";
+  const windowsEngines = !!speech?.native || !!speech?.voiceTyping;
+  const engineDesc = !windowsEngines
+    ? t("general.engineLinux")
+    : native
+      ? t("general.engineNativeDesc")
+      : voiceTyping
+        ? t("general.engineVoiceTypingDesc")
+        : t("general.engineAiDesc");
   const languageOptions = [
     {
       value: AUTO,
@@ -116,23 +125,22 @@ export function GeneralTab({ draft, update, catalog }: TabProps) {
       </Section>
 
       <Section title={t("general.dictation")} description={t("general.dictationDesc")}>
-        <Row
-          label={t("general.speechEngine")}
-          description={speech?.native ? (native ? t("general.engineNativeDesc") : t("general.engineAiDesc")) : t("general.engineLinux")}
-        >
+        <Row label={t("general.speechEngine")} description={engineDesc}>
           <SimpleSelect
             aria-label={t("general.speechEngine")}
             value={draft.speechEngine}
-            disabled={!speech?.native}
+            disabled={!windowsEngines}
             onValueChange={(v) => update({ speechEngine: v as SpeechEngine })}
             options={[
               ...(speech?.native ? [{ value: "native", label: t("general.engineNative") }] : []),
+              ...(speech?.voiceTyping ? [{ value: "voice_typing", label: t("general.engineVoiceTyping") }] : []),
               { value: "ai", label: t("general.engineAi") },
             ]}
           />
         </Row>
-        <Row label={t("general.speechLanguage")}>
+        <Row label={t("general.speechLanguage")} description={voiceTyping ? t("general.speechLanguageVoiceTyping") : undefined}>
           <SimpleSelect
+            disabled={voiceTyping}
             aria-label={t("general.speechLanguage")}
             value={draft.speechLanguage || AUTO}
             onValueChange={(v) => update({ speechLanguage: v === AUTO ? "" : v })}
@@ -149,7 +157,7 @@ export function GeneralTab({ draft, update, catalog }: TabProps) {
             />
           </Row>
         )}
-        {native && (
+        {(native || voiceTyping) && (
           <div className="px-4 py-3">
             <Notice>
               {t("errors.speechPrivacy")}

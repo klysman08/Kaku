@@ -30,6 +30,8 @@ export function useDictation(onText: (text: string) => void) {
   const [partial, setPartial] = useState("");
   const [level, setLevel] = useState(0);
   const [error, setError] = useState<DictationError | null>(null);
+  // Windows voice typing (Win+H) was opened: it types into the box on its own.
+  const [voiceTyping, setVoiceTyping] = useState(false);
   const stateRef = useRef<DictationState>("idle");
   const onTextRef = useRef(onText);
   onTextRef.current = onText;
@@ -88,8 +90,12 @@ export function useDictation(onText: (text: string) => void) {
     setError(null);
     set("starting");
     try {
-      await api.speechStart();
-      set("listening");
+      const engine = await api.speechStart();
+      if (engine === "voice_typing") {
+        // Kaku only presses Win+H; the next click presses it again to close the panel.
+        setVoiceTyping((v) => !v);
+        set("idle");
+      } else set("listening");
     } catch (e) {
       fail(e);
       set("idle");
@@ -108,7 +114,10 @@ export function useDictation(onText: (text: string) => void) {
     set("idle");
   }, [set]);
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = useCallback(() => {
+    setError(null);
+    setVoiceTyping(false);
+  }, []);
 
-  return { state, partial, level, error, toggle, finish, cancel, clearError, active: state !== "idle" };
+  return { state, partial, level, error, voiceTyping, toggle, finish, cancel, clearError, active: state !== "idle" };
 }

@@ -1,6 +1,8 @@
 //! Dictation for the palette's text box. Two engines, picked in Settings › General:
 //!
 //! - "native" (Windows only): Windows speech recognition, text appears while you speak.
+//! - "voice_typing" (Windows only): opens Windows voice typing (Win+H), which types into
+//!   the focused text box by itself. Kaku only launches it; there is no session to track.
 //! - "ai": record the microphone, then transcribe with the configured provider
 //!   (Gemini audio input, or `/audio/transcriptions` on OpenAI-compatible servers).
 //!
@@ -42,6 +44,8 @@ pub struct SpeechLanguage {
 pub struct SpeechInfo {
     /// Windows speech recognition can be used on this machine.
     pub native: bool,
+    /// Windows voice typing (Win+H) exists on this OS.
+    pub voice_typing: bool,
     pub native_languages: Vec<SpeechLanguage>,
     /// Windows' speech language (used when no language is chosen).
     pub system_language: String,
@@ -53,6 +57,7 @@ pub fn info() -> SpeechInfo {
         let (native_languages, system_language) = native::languages();
         SpeechInfo {
             native: !native_languages.is_empty(),
+            voice_typing: true,
             native_languages,
             system_language,
         }
@@ -60,6 +65,7 @@ pub fn info() -> SpeechInfo {
     #[cfg(not(windows))]
     SpeechInfo {
         native: false,
+        voice_typing: false,
         native_languages: Vec::new(),
         system_language: String::new(),
     }
@@ -98,6 +104,16 @@ pub async fn start(app: &AppHandle) -> Result<&'static str, CommandError> {
     cancel();
     let settings = app.state::<AppState>().settings();
     let language = settings.speech_language.clone();
+
+    #[cfg(windows)]
+    if settings.speech_engine == "voice_typing" {
+        tauri::async_runtime::spawn_blocking(crate::selection::toggle_voice_typing)
+            .await
+            .map_err(|e| CommandError::new("speech_failed", e.to_string()))?
+            .map_err(|e| CommandError::new("speech_failed", e.to_string()))?;
+        log::info!("voice typing toggled (Win+H)");
+        return Ok("voice_typing");
+    }
 
     #[cfg(windows)]
     if settings.speech_engine == "native" {

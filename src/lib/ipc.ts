@@ -41,11 +41,13 @@ export interface Settings {
   onboarded: boolean;
 }
 
-export type SpeechEngine = "native" | "ai";
+export type SpeechEngine = "native" | "voice_typing" | "ai";
 
 export interface SpeechInfo {
   /** Windows speech recognition is available on this machine. */
   native: boolean;
+  /** Windows voice typing (Win+H) exists on this OS. */
+  voiceTyping: boolean;
   nativeLanguages: { tag: string; name: string }[];
   systemLanguage: string;
 }

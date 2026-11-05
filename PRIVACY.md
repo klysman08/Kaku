@@ -8,6 +8,7 @@ Kaku is a local desktop application. It has no servers, accounts, telemetry or a
 - **Dictation audio**, only while you hold the microphone on in the palette:
   - *AI provider* engine: the recording (16 kHz mono WAV) is sent to your configured provider for transcription, once you stop.
   - *Windows* engine: audio is streamed to Microsoft's online speech recognition, which Windows requires for free-form dictation (Windows Settings › Privacy & security › Speech).
+  - *Windows voice typing* (Win+H): Kaku only opens Windows' own voice typing panel; Windows captures and processes the audio under Microsoft's terms. Kaku never sees the audio, only the typed text.
 
   Audio is kept in memory only and is never written to disk, history or logs.
 - **Update checks** (if enabled): a request to `github.com` for the `latest.json` release manifest. No identifiers are sent.

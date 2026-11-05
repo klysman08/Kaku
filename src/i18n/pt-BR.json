@@ -120,7 +120,10 @@
     "speechLanguageAutoNative": "Idioma de fala do Windows ({{lang}})",
     "transcriptionModel": "Modelo de transcrição",
     "transcriptionModelDesc": "Para o provedor OpenAI-compatível (endpoint /audio/transcriptions). Ex.: gpt-4o-mini-transcribe, whisper-1. O Ollama não oferece transcrição.",
-    "openSpeechSettings": "Configurações de fala do Windows"
+    "openSpeechSettings": "Configurações de fala do Windows",
+    "engineVoiceTyping": "Ditado do Windows (Win+H)",
+    "engineVoiceTypingDesc": "Abre o painel de ditado do próprio Windows, que digita na caixa de texto, com pontuação automática e comandos de voz (\"vírgula\", \"nova linha\"). Usa o reconhecimento de fala online do Windows: o áudio vai para a Microsoft.",
+    "speechLanguageVoiceTyping": "O ditado do Windows usa o idioma de entrada (teclado) ativo no Windows."
   },
   "provider": {
     "welcomeTitle": "Bem-vindo ao Kaku",
@@ -262,7 +265,9 @@
     "listening": "Ouvindo… clique no microfone para parar",
     "transcribing": "Transcrevendo…",
     "openSpeechSettings": "Abrir configurações de fala do Windows",
-    "dictationLimit": "Limite de 5 minutos atingido."
+    "dictationLimit": "Limite de 5 minutos atingido.",
+    "voiceTyping": "Ditado do Windows (Win+H)",
+    "voiceTypingHint": "Ditado do Windows aberto: fale e o texto aparece na caixa. Clique no microfone (ou Win+H) para fechar. Se o painel não abrir, clique na caixa e pressione Win+H."
   },
   "toast": {
     "working": "{{action}}…"

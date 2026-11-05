@@ -143,6 +143,11 @@ pub fn run() {
                 tauri::async_runtime::spawn(async move {
                     tokio::time::sleep(std::time::Duration::from_millis(150)).await;
                     let keep_open = app.state::<AppState>().popup_prefs.lock_safe().keep_open;
+                    // Voice typing (Win+H) takes focus while it types into the palette.
+                    #[cfg(windows)]
+                    if selection::foreground_is_input_panel() {
+                        return;
+                    }
                     if let Some(w) = app.get_webview_window(windows::POPUP)
                         && !keep_open
                         && w.is_visible().unwrap_or(false)

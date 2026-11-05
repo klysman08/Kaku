@@ -187,6 +187,55 @@ fn release_modifiers(grace: Duration) {
 /// How long to let the user release the shortcut's modifiers before we do it.
 const MODIFIER_GRACE: Duration = Duration::from_millis(120);
 
+/// Toggle Windows voice typing (Win+H). It types into whichever text field has focus.
+#[cfg(windows)]
+pub fn toggle_voice_typing() -> Result<(), SelectionError> {
+    const VK_H: u32 = 0x48;
+    let err = |e: &dyn std::fmt::Display| SelectionError::Input(e.to_string());
+    let mut e = Enigo::new(&Settings::default()).map_err(|x| err(&x))?;
+    e.key(Key::LWin, Direction::Press).map_err(|x| err(&x))?;
+    let r = e.key(Key::Other(VK_H), Direction::Click);
+    e.key(Key::LWin, Direction::Release).map_err(|x| err(&x))?;
+    r.map_err(|x| err(&x))
+}
+
+/// True when the foreground window is the Windows input panel (voice typing, emoji
+/// panel, touch keyboard), which briefly takes focus from the field it types into.
+#[cfg(windows)]
+pub fn foreground_is_input_panel() -> bool {
+    use windows::Win32::Foundation::CloseHandle;
+    use windows::Win32::System::Threading::{
+        OpenProcess, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+        QueryFullProcessImageNameW,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+    // SAFETY: read-only Win32 queries; the process handle is closed before returning.
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        let mut pid = 0u32;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        if pid == 0 {
+            return false;
+        }
+        let Ok(process) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) else {
+            return false;
+        };
+        let mut buf = [0u16; 512];
+        let mut len = buf.len() as u32;
+        let ok = QueryFullProcessImageNameW(
+            process,
+            PROCESS_NAME_WIN32,
+            windows::core::PWSTR(buf.as_mut_ptr()),
+            &mut len,
+        )
+        .is_ok();
+        let _ = CloseHandle(process);
+        ok && String::from_utf16_lossy(&buf[..len as usize])
+            .to_ascii_lowercase()
+            .ends_with("\\textinputhost.exe")
+    }
+}
+
 /// VK 0xE8 is unassigned by Windows, so tapping it has no effect in any app.
 #[cfg(windows)]
 const MENU_MASK_VK: u32 = 0xE8;

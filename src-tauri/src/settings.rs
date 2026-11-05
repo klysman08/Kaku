@@ -81,8 +81,9 @@ pub struct Settings {
     pub proxy_url: String,
     pub request_timeout_secs: u64,
 
-    /// Dictation in the palette: "native" (Windows speech recognition, live text) or
-    /// "ai" (record, then transcribe with the configured provider). Linux: "ai" only.
+    /// Dictation in the palette: "native" (Windows speech recognition, live text),
+    /// "voice_typing" (Windows voice typing, the Win+H panel) or "ai" (record, then
+    /// transcribe with the configured provider). Linux: "ai" only.
     pub speech_engine: String,
     /// BCP-47 tag for dictation ("" = system speech language / auto-detect).
     pub speech_language: String,
@@ -171,7 +172,7 @@ pub fn default_speech_engine() -> &'static str {
 }
 
 pub fn speech_engine_available(engine: &str) -> bool {
-    engine == "ai" || (engine == "native" && cfg!(windows))
+    engine == "ai" || (matches!(engine, "native" | "voice_typing") && cfg!(windows))
 }
 
 /// Palette window preferences, toggled from the palette itself. Kept apart from
@@ -276,6 +277,21 @@ mod tests {
         let store = SettingsStore::new(dir.path());
         assert_eq!(store.load(), Settings::default());
         assert!(dir.path().join("settings.json.bak").exists());
+    }
+
+    #[test]
+    fn speech_engines_follow_the_platform() {
+        assert!(speech_engine_available("ai"));
+        assert_eq!(speech_engine_available("native"), cfg!(windows));
+        assert_eq!(speech_engine_available("voice_typing"), cfg!(windows));
+        assert!(!speech_engine_available("whisper"));
+        let s = Settings {
+            speech_engine: "voice_typing".into(),
+            ..Settings::default()
+        }
+        .sanitize();
+        let expected = if cfg!(windows) { "voice_typing" } else { "ai" };
+        assert_eq!(s.speech_engine, expected);
     }
 
     #[test]

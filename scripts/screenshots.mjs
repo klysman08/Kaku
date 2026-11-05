@@ -83,6 +83,14 @@ function client(wsUrl) {
   return { ready, send, close: () => ws.close() };
 }
 
+// Without the dev server every shot would be the browser's "can't reach this page".
+try {
+  await fetch(base);
+} catch {
+  console.error(`The dev server is not running at ${base}. Start it with \`pnpm dev\` first.`);
+  process.exit(1);
+}
+
 mkdirSync(out, { recursive: true });
 const profile = mkdtempSync(join(tmpdir(), "kaku-shots-"));
 const proc = spawn(
