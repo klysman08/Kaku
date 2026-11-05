@@ -223,7 +223,14 @@
     "copyClose": "Copy and close",
     "placeholderNoCopy": "Couldn't copy the selection. Paste the text here (Ctrl+V) or type…",
     "replaceHint": "Replace pastes the result into the source app over the selected text. Enter also replaces.",
-    "replaceHintNoCopy": "Replace pastes the result into the source app over whatever is selected there."
+    "replaceHintNoCopy": "Replace pastes the result into the source app over whatever is selected there.",
+    "keepOpen": "Keep visible (always on top)",
+    "keepOpenOn": "Always visible: click to close when clicking elsewhere",
+    "lockPosition": "Lock position here",
+    "lockPositionOn": "Position locked: click to open by the cursor",
+    "capturing": "Copying the selection…",
+    "applied": "Text replaced. Select more text and press the shortcut.",
+    "drag": "Drag to move"
   },
   "toast": {
     "working": "{{action}}…"

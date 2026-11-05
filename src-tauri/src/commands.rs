@@ -4,7 +4,7 @@ use crate::ai::{self, Completion, ModelInfo};
 use crate::db::{self, HistoryItem, UsageSummary};
 use crate::engine::{self, CommandError};
 use crate::flows::{self, PopupPayload};
-use crate::settings::{ProviderKind, Settings};
+use crate::settings::{PopupPrefs, ProviderKind, Settings};
 use crate::shortcuts::{self, ShortcutFailure};
 use crate::state::{AppState, LockExt};
 use crate::{actions, secrets, selection, tray, windows};
@@ -149,6 +149,20 @@ pub async fn popup_apply(app: AppHandle, text: String) -> Res<String> {
 #[tauri::command]
 pub fn popup_close(app: AppHandle) {
     flows::close_popup(&app, true);
+}
+
+#[tauri::command]
+pub fn popup_prefs(app: AppHandle) -> PopupPrefs {
+    flows::popup_prefs(&app)
+}
+
+#[tauri::command]
+pub fn popup_set_prefs(
+    app: AppHandle,
+    keep_open: Option<bool>,
+    lock_position: Option<bool>,
+) -> PopupPrefs {
+    flows::set_popup_prefs(&app, keep_open, lock_position)
 }
 
 #[tauri::command]

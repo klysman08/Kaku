@@ -76,6 +76,16 @@ export interface PopupPayload {
   hasSelection: boolean;
   /** The origin window is known: "Replace" pastes the result back there. */
   canReplace: boolean;
+  /** The copy is still on its way; another "popup:open" with the text follows. */
+  capturing: boolean;
+}
+
+/** Palette window preferences, toggled from the palette header. */
+export interface PopupPrefs {
+  /** Stay open and on top when another window is clicked. */
+  keepOpen: boolean;
+  /** Open where it was locked instead of next to the cursor. */
+  lockPosition: boolean;
 }
 
 export interface Totals {
@@ -150,6 +160,8 @@ export const api = {
   popupState: () => invoke<PopupPayload>("popup_state"),
   popupApply: (text: string) => invoke<"pasted" | "copied">("popup_apply", { text }),
   popupClose: () => invoke<void>("popup_close"),
+  popupPrefs: () => invoke<PopupPrefs>("popup_prefs"),
+  popupSetPrefs: (prefs: Partial<PopupPrefs>) => invoke<PopupPrefs>("popup_set_prefs", prefs),
   copyText: (text: string) => invoke<void>("copy_text", { text }),
   openSettings: (tab?: string) => invoke<void>("open_settings", { tab }),
   usageSummary: (days: number) => invoke<UsageSummary>("usage_summary", { days, tzOffsetSecs: -new Date().getTimezoneOffset() * 60 }),

@@ -147,6 +147,19 @@ impl Settings {
     }
 }
 
+/// Palette window preferences, toggled from the palette itself. Kept apart from
+/// [`Settings`] so saving the Settings window never overwrites them.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(default, rename_all = "camelCase")]
+pub struct PopupPrefs {
+    /// Stay open (and on top) when another window is clicked.
+    pub keep_open: bool,
+    /// Open at `position` instead of next to the cursor.
+    pub lock_position: bool,
+    /// Top-left corner in physical pixels.
+    pub position: Option<(i32, i32)>,
+}
+
 pub struct SettingsStore {
     path: PathBuf,
 }
@@ -174,13 +187,32 @@ impl SettingsStore {
     }
 
     pub fn save(&self, settings: &Settings) -> std::io::Result<()> {
-        if let Some(parent) = self.path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        let tmp = self.path.with_extension("json.tmp");
-        fs::write(&tmp, serde_json::to_vec_pretty(settings)?)?;
-        fs::rename(tmp, &self.path)
+        write_atomic(&self.path, &serde_json::to_vec_pretty(settings)?)
     }
+
+    fn popup_path(&self) -> PathBuf {
+        self.path.with_file_name("popup.json")
+    }
+
+    pub fn load_popup_prefs(&self) -> PopupPrefs {
+        fs::read_to_string(self.popup_path())
+            .ok()
+            .and_then(|raw| serde_json::from_str(&raw).ok())
+            .unwrap_or_default()
+    }
+
+    pub fn save_popup_prefs(&self, prefs: &PopupPrefs) -> std::io::Result<()> {
+        write_atomic(&self.popup_path(), &serde_json::to_vec_pretty(prefs)?)
+    }
+}
+
+fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let tmp = path.with_extension("json.tmp");
+    fs::write(&tmp, bytes)?;
+    fs::rename(tmp, path)
 }
 
 #[cfg(test)]
@@ -217,5 +249,23 @@ mod tests {
         let store = SettingsStore::new(dir.path());
         assert_eq!(store.load(), Settings::default());
         assert!(dir.path().join("settings.json.bak").exists());
+    }
+
+    #[test]
+    fn popup_prefs_live_apart_from_settings() {
+        let dir = tempfile::tempdir().unwrap();
+        let store = SettingsStore::new(dir.path());
+        assert_eq!(store.load_popup_prefs(), PopupPrefs::default());
+        let prefs = PopupPrefs {
+            keep_open: true,
+            lock_position: true,
+            position: Some((-1200, 340)),
+        };
+        store.save_popup_prefs(&prefs).unwrap();
+        // Saving the Settings window must not touch the palette preferences.
+        store.save(&Settings::default()).unwrap();
+        assert_eq!(store.load_popup_prefs(), prefs);
+        fs::write(dir.path().join("popup.json"), "garbage").unwrap();
+        assert_eq!(store.load_popup_prefs(), PopupPrefs::default());
     }
 }

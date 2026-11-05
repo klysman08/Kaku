@@ -48,6 +48,26 @@ pub fn show_main(app: &AppHandle) {
     }
 }
 
+/// Put the palette at its locked spot (when that is still on a screen), else by the cursor.
+pub fn place_popup<R: Runtime>(
+    app: &AppHandle<R>,
+    window: &WebviewWindow<R>,
+    prefs: &crate::settings::PopupPrefs,
+) {
+    if prefs.lock_position
+        && let Some((x, y)) = prefs.position
+        && app
+            .monitor_from_point(f64::from(x) + 20.0, f64::from(y) + 20.0)
+            .ok()
+            .flatten()
+            .is_some()
+    {
+        let _ = window.set_position(PhysicalPosition::new(x, y));
+        return;
+    }
+    place_near_cursor(app, window, (12.0, 16.0));
+}
+
 /// Place a window next to the mouse cursor, kept inside the monitor's work area.
 pub fn place_near_cursor<R: Runtime>(
     app: &AppHandle<R>,

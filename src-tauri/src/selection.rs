@@ -75,6 +75,7 @@ fn write_text_private(text: &str) -> Result<(), SelectionError> {
     })
 }
 
+#[cfg(not(windows))]
 fn clear() {
     let _ = with_clipboard(|c| c.clear());
 }
@@ -124,40 +125,57 @@ fn focus_target(target: &Target) {
 
 /// The user is usually still holding the shortcut's modifiers when we fire; sending
 /// Ctrl+C while Shift/Alt is down would trigger a different command in the target app.
-fn wait_for_modifiers_release(timeout: Duration) {
+///
+/// Waiting for the physical release used to cost up to a second (people keep Alt down
+/// while they look at the screen), so we only wait a short `grace` and then release the
+/// keys ourselves. The later physical key-up is harmless: no key-down precedes it.
+fn release_modifiers(grace: Duration) {
     #[cfg(windows)]
     {
         use windows::Win32::UI::Input::KeyboardAndMouse::{
-            GetAsyncKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
+            GetAsyncKeyState, VK_LCONTROL, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_MENU, VK_RCONTROL,
+            VK_RMENU, VK_RSHIFT, VK_RWIN,
         };
         // SAFETY: GetAsyncKeyState only reads key state.
         let down = |vk: u16| unsafe { GetAsyncKeyState(i32::from(vk)) } as u16 & 0x8000 != 0;
+        let Ok(mut e) = Enigo::new(&Settings::default()) else {
+            return;
+        };
 
         // The hotkey's letter was swallowed by RegisterHotKey, so releasing Alt (or Win)
         // now looks like a lone tap: Windows/Electron apps (Notion, Slack, VS Code...)
         // then activate their menu bar (or the Start menu) and our Ctrl+C is lost.
         // Tapping an unassigned virtual key while the modifier is still down "uses" it,
         // the same trick AutoHotkey calls the menu mask key.
-        if (down(VK_MENU.0) || down(VK_LWIN.0) || down(VK_RWIN.0))
-            && let Ok(mut e) = Enigo::new(&Settings::default())
-        {
+        if down(VK_MENU.0) || down(VK_LWIN.0) || down(VK_RWIN.0) {
             let _ = e.key(Key::Other(MENU_MASK_VK), Direction::Click);
         }
 
+        // Left/right variants, so the key-up matches the physical key that is down.
+        let mods = [
+            (VK_LSHIFT, Key::LShift),
+            (VK_RSHIFT, Key::RShift),
+            (VK_LCONTROL, Key::LControl),
+            (VK_RCONTROL, Key::RControl),
+            (VK_LMENU, Key::LMenu),
+            (VK_RMENU, Key::RMenu),
+            (VK_LWIN, Key::LWin),
+            (VK_RWIN, Key::RWin),
+        ];
         let start = Instant::now();
-        let held = || {
-            [VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN]
-                .iter()
-                .any(|vk| down(vk.0))
-        };
-        while held() && start.elapsed() < timeout {
-            sleep(Duration::from_millis(15));
+        while mods.iter().any(|(vk, _)| down(vk.0)) && start.elapsed() < grace {
+            sleep(Duration::from_millis(10));
+        }
+        for (vk, key) in mods {
+            if down(vk.0) {
+                let _ = e.key(key, Direction::Release);
+            }
         }
     }
     #[cfg(not(windows))]
     {
         // No portable way to read key state: give the user a moment, then force-release.
-        sleep(timeout.min(Duration::from_millis(150)));
+        sleep(grace);
         if let Ok(mut e) = Enigo::new(&Settings::default()) {
             for k in [Key::Shift, Key::Alt, Key::Meta, Key::Control] {
                 let _ = e.key(k, Direction::Release);
@@ -165,6 +183,9 @@ fn wait_for_modifiers_release(timeout: Duration) {
         }
     }
 }
+
+/// How long to let the user release the shortcut's modifiers before we do it.
+const MODIFIER_GRACE: Duration = Duration::from_millis(120);
 
 /// VK 0xE8 is unassigned by Windows, so tapping it has no effect in any app.
 #[cfg(windows)]
@@ -190,36 +211,96 @@ fn chord(letter: char) -> Result<(), SelectionError> {
 
 /// How long to wait for the app to put the copied text on the clipboard. Electron
 /// apps (Notion, Teams, Slack) write asynchronously and can take well over 500 ms.
-const COPY_TIMEOUT: Duration = Duration::from_millis(1500);
+pub const COPY_TIMEOUT: Duration = Duration::from_millis(1500);
+
+/// Changes whenever any app writes the clipboard. Polling it is free, whereas opening
+/// the clipboard to look at it can make the copying app wait for us.
+#[cfg(windows)]
+fn clipboard_seq() -> u32 {
+    // SAFETY: no arguments, only reads a counter.
+    unsafe { windows::Win32::System::DataExchange::GetClipboardSequenceNumber() }
+}
+
+/// Ctrl+C has been sent to `target`; the text may still be on its way.
+pub struct PendingCopy {
+    pub target: Target,
+    pub previous_clipboard: Option<String>,
+    started: Instant,
+    #[cfg(windows)]
+    seq_before: u32,
+}
+
+/// Send Ctrl+C to the focused app without waiting for the result.
+pub fn start_copy() -> Result<PendingCopy, SelectionError> {
+    let target = foreground_target();
+    release_modifiers(MODIFIER_GRACE);
+    let previous_clipboard = read_text();
+    #[cfg(windows)]
+    let seq_before = clipboard_seq();
+    // Without a change counter, emptying the clipboard is how we notice the copy.
+    #[cfg(not(windows))]
+    clear();
+    chord('c')?;
+    Ok(PendingCopy {
+        target,
+        previous_clipboard,
+        started: Instant::now(),
+        #[cfg(windows)]
+        seq_before,
+    })
+}
+
+impl PendingCopy {
+    /// Wait until the copied text arrives or `until` (measured from the Ctrl+C) passes.
+    pub fn wait(&self, until: Duration) -> Option<String> {
+        let deadline = self.started + until;
+        loop {
+            #[cfg(windows)]
+            let changed = clipboard_seq() != self.seq_before;
+            #[cfg(not(windows))]
+            let changed = true;
+            if changed && let Some(text) = read_text() {
+                return Some(text);
+            }
+            if Instant::now() >= deadline {
+                return None;
+            }
+            sleep(Duration::from_millis(10));
+        }
+    }
+
+    pub fn elapsed(&self) -> Duration {
+        self.started.elapsed()
+    }
+
+    pub fn into_captured(self, text: Option<String>) -> Captured {
+        Captured {
+            text,
+            target: self.target,
+            previous_clipboard: self.previous_clipboard,
+        }
+    }
+}
 
 /// Copy the current selection of the focused app. Always returns the target window so
 /// the result can be pasted back even when nothing could be copied.
 pub fn capture() -> Result<Captured, SelectionError> {
-    let target = foreground_target();
-    wait_for_modifiers_release(Duration::from_millis(1200));
-
-    let previous_clipboard = read_text();
-    clear();
-    chord('c')?;
-
-    let deadline = Instant::now() + COPY_TIMEOUT;
-    while Instant::now() < deadline {
-        sleep(Duration::from_millis(25));
-        if let Some(text) = read_text() {
-            return Ok(Captured {
-                text: Some(text),
-                target,
-                previous_clipboard,
-            });
-        }
+    let pending = start_copy()?;
+    let text = pending.wait(COPY_TIMEOUT);
+    if text.is_none() {
+        log::info!("no text copied from the focused app within {COPY_TIMEOUT:?}");
+        restore_if_changed(&pending.previous_clipboard);
     }
-    log::info!("no text copied from the focused app within {COPY_TIMEOUT:?}");
-    restore(previous_clipboard.clone());
-    Ok(Captured {
-        text: None,
-        target,
-        previous_clipboard,
-    })
+    Ok(pending.into_captured(text))
+}
+
+/// Put the user's clipboard text back after our Ctrl+C, unless it is already there.
+pub fn restore_if_changed(previous: &Option<String>) {
+    if let Some(prev) = previous
+        && read_text().as_ref() != Some(prev)
+    {
+        let _ = write_clipboard(prev);
+    }
 }
 
 /// Paste `text` into `target`, then restore the user's clipboard.
@@ -230,7 +311,7 @@ pub fn paste(
 ) -> Result<(), SelectionError> {
     write_text_private(text)?;
     focus_target(target);
-    wait_for_modifiers_release(Duration::from_millis(1200));
+    release_modifiers(MODIFIER_GRACE);
     sleep(Duration::from_millis(40));
     chord('v')?;
     // Give the target app time to read the clipboard before restoring it.

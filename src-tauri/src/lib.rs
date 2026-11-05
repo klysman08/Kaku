@@ -16,10 +16,10 @@ mod tray;
 mod windows;
 
 use settings::SettingsStore;
-use state::AppState;
+use state::{AppState, LockExt};
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicU64};
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 
@@ -70,6 +70,7 @@ pub fn run() {
 
             let store = SettingsStore::new(&config_dir);
             let settings = store.load();
+            let popup_prefs = store.load_popup_prefs();
             let db = db::Db::open(&data_dir.join("kaku.db"))?;
             if settings.history_enabled {
                 let _ = db.prune_history(engine::now(), settings.history_retention_days);
@@ -85,6 +86,9 @@ pub fn run() {
                 db: Mutex::new(db),
                 popup: Mutex::new(None),
                 busy: AtomicBool::new(false),
+                capturing: AtomicBool::new(false),
+                popup_session: AtomicU64::new(0),
+                popup_prefs: Mutex::new(popup_prefs),
                 shortcut_map: Mutex::new(HashMap::new()),
                 shortcut_failures: Mutex::new(Vec::new()),
                 last_original: Mutex::new(None),
@@ -130,11 +134,22 @@ pub fn run() {
             {
                 let _ = window.hide();
             }
-            // Clicking outside the palette dismisses it (without stealing focus back).
-            (windows::POPUP, WindowEvent::Focused(false))
-                if window.is_visible().unwrap_or(false) =>
-            {
-                flows::close_popup(window.app_handle(), false);
+            // Clicking outside the palette dismisses it (without stealing focus back),
+            // unless it is kept open. Focus can blink away for a moment while the window
+            // is dragged, so look again shortly before closing.
+            (windows::POPUP, WindowEvent::Focused(false)) => {
+                let app = window.app_handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+                    let keep_open = app.state::<AppState>().popup_prefs.lock_safe().keep_open;
+                    if let Some(w) = app.get_webview_window(windows::POPUP)
+                        && !keep_open
+                        && w.is_visible().unwrap_or(false)
+                        && !w.is_focused().unwrap_or(false)
+                    {
+                        flows::close_popup(&app, false);
+                    }
+                });
             }
             _ => {}
         })
@@ -151,6 +166,8 @@ pub fn run() {
             commands::popup_state,
             commands::popup_apply,
             commands::popup_close,
+            commands::popup_prefs,
+            commands::popup_set_prefs,
             commands::copy_text,
             commands::open_settings,
             commands::usage_summary,

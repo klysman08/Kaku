@@ -223,7 +223,14 @@
     "copyClose": "Copiar e fechar",
     "placeholderNoCopy": "Não consegui copiar a seleção. Cole o texto aqui (Ctrl+V) ou digite…",
     "replaceHint": "Substituir cola o resultado no app de origem, no lugar do texto selecionado. Enter também substitui.",
-    "replaceHintNoCopy": "Substituir cola o resultado no app de origem, no lugar do que estiver selecionado lá."
+    "replaceHintNoCopy": "Substituir cola o resultado no app de origem, no lugar do que estiver selecionado lá.",
+    "keepOpen": "Manter visível (sempre no topo)",
+    "keepOpenOn": "Visível sempre: clique para fechar ao clicar fora",
+    "lockPosition": "Fixar posição aqui",
+    "lockPositionOn": "Posição fixada: clique para abrir junto ao cursor",
+    "capturing": "Copiando a seleção…",
+    "applied": "Texto substituído. Selecione outro texto e use o atalho.",
+    "drag": "Arraste para mover"
   },
   "toast": {
     "working": "{{action}}…"

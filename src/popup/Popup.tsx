@@ -2,11 +2,25 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
-import { ArrowLeft, Check, ClipboardCopy, Globe, Loader2, Replace, RotateCcw, Settings, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ClipboardCopy,
+  Globe,
+  Loader2,
+  Lock,
+  LockOpen,
+  Pin,
+  PinOff,
+  Replace,
+  RotateCcw,
+  Settings,
+  X,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Highlight } from "@animate-ui/react/primitives/effects/highlight";
 import { ACTION_ICONS, actionLabel, describeError } from "@/lib/actions";
-import { api, type Catalog, type PopupPayload } from "@/lib/ipc";
+import { api, type Catalog, type PopupPayload, type PopupPrefs } from "@/lib/ipc";
 import { playSound } from "@/lib/sound";
 import { useLiveSettings } from "@/lib/useSettings";
 import { cn } from "@/lib/utils";
@@ -18,12 +32,24 @@ type View =
   | { kind: "error"; action: string; title: string; detail: string };
 
 const WIDTH = 340;
+const EMPTY: PopupPayload = { text: "", hasSelection: false, canReplace: false, capturing: false };
+
+/** Mouse-down on the header (not on its buttons) drags the window. */
+const headerButton = "hover:text-foreground hover:bg-accent rounded p-1 transition-colors";
+
+function dragWindow(e: React.MouseEvent) {
+  if (e.button !== 0 || (e.target as HTMLElement).closest("button, select, textarea, input")) return;
+  e.preventDefault();
+  void getCurrentWindow().startDragging();
+}
 
 export function Popup() {
   const { t } = useTranslation();
   const settings = useLiveSettings();
   const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [payload, setPayload] = useState<PopupPayload>({ text: "", hasSelection: false, canReplace: false });
+  const [payload, setPayload] = useState<PopupPayload>(EMPTY);
+  const [prefs, setPrefs] = useState<PopupPrefs>({ keepOpen: false, lockPosition: false });
+  const [applied, setApplied] = useState(false);
   const [input, setInput] = useState("");
   const [language, setLanguage] = useState("");
   const [view, setView] = useState<View>({ kind: "menu" });
@@ -38,11 +64,13 @@ export function Popup() {
     setInput(p.text);
     setView({ kind: "menu" });
     setCopied(false);
+    if (p.text || p.capturing) setApplied(false);
   }, []);
 
   useEffect(() => {
     void api.getCatalog().then(setCatalog);
     void api.popupState().then(reset);
+    void api.popupPrefs().then(setPrefs);
     const un = listen<PopupPayload>("popup:open", (e) => reset(e.payload));
     return () => void un.then((f) => f());
   }, [reset]);
@@ -97,7 +125,16 @@ export function Popup() {
     if (view.kind !== "result") return;
     const text = resultRef.current?.value ?? view.text;
     await api.popupApply(text);
-  }, [view]);
+    // A palette kept open stays up, ready for the next selection.
+    if (prefs.keepOpen) {
+      reset(EMPTY);
+      setApplied(true);
+    }
+  }, [view, prefs.keepOpen, reset]);
+
+  const togglePref = useCallback(async (patch: Partial<PopupPrefs>) => {
+    setPrefs(await api.popupSetPrefs(patch));
+  }, []);
 
   const copy = useCallback(async () => {
     if (view.kind !== "result") return;
@@ -132,8 +169,9 @@ export function Popup() {
     <div ref={rootRef} className="p-1.5">
       <div className="bg-popover text-popover-foreground overflow-hidden rounded-xl border shadow-2xl">
         <header
-          data-tauri-drag-region
-          className="text-muted-foreground flex h-9 items-center gap-2 border-b px-3 text-[11px] font-semibold tracking-wider uppercase"
+          onMouseDown={dragWindow}
+          title={t("popup.drag")}
+          className="text-muted-foreground flex h-9 cursor-grab items-center gap-2 border-b px-3 text-[11px] font-semibold tracking-wider uppercase select-none active:cursor-grabbing"
         >
           {view.kind !== "menu" && (
             <button
@@ -146,17 +184,30 @@ export function Popup() {
             </button>
           )}
           {view.kind === "menu" && <img src="/app-icon.svg" alt="" className="pointer-events-none size-4 rounded" />}
-          <span data-tauri-drag-region>Kaku AI Writer</span>
-          <div className="ml-auto flex items-center gap-1">
+          <span>Kaku AI Writer</span>
+          <div className="ml-auto flex items-center gap-0.5">
             <button
               type="button"
-              className="hover:text-foreground rounded p-0.5"
-              title={t("popup.settings")}
-              onClick={() => void api.openSettings()}
+              aria-pressed={prefs.keepOpen}
+              className={cn(headerButton, prefs.keepOpen && "text-primary bg-accent")}
+              title={prefs.keepOpen ? t("popup.keepOpenOn") : t("popup.keepOpen")}
+              onClick={() => void togglePref({ keepOpen: !prefs.keepOpen })}
             >
+              {prefs.keepOpen ? <Pin className="size-3.5" /> : <PinOff className="size-3.5" />}
+            </button>
+            <button
+              type="button"
+              aria-pressed={prefs.lockPosition}
+              className={cn(headerButton, prefs.lockPosition && "text-primary bg-accent")}
+              title={prefs.lockPosition ? t("popup.lockPositionOn") : t("popup.lockPosition")}
+              onClick={() => void togglePref({ lockPosition: !prefs.lockPosition })}
+            >
+              {prefs.lockPosition ? <Lock className="size-3.5" /> : <LockOpen className="size-3.5" />}
+            </button>
+            <button type="button" className={headerButton} title={t("popup.settings")} onClick={() => void api.openSettings()}>
               <Settings className="size-3.5" />
             </button>
-            <button type="button" className="hover:text-foreground rounded p-0.5" title={t("common.close")} onClick={close}>
+            <button type="button" className={headerButton} title={t("common.close")} onClick={close}>
               <X className="size-3.5" />
             </button>
           </div>
@@ -172,14 +223,22 @@ export function Popup() {
           >
             {view.kind === "menu" && (
               <div className="p-2">
-                {!payload.hasSelection && (
-                  <textarea
-                    autoFocus
-                    className="bg-muted/40 placeholder:text-muted-foreground mb-2 h-20 w-full resize-none rounded-md border p-2 text-sm outline-none select-text"
-                    placeholder={payload.canReplace ? t("popup.placeholderNoCopy") : t("popup.placeholder")}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                  />
+                {applied && <p className="text-muted-foreground mb-2 px-1 text-xs">{t("popup.applied")}</p>}
+                {payload.capturing ? (
+                  <div className="bg-muted/40 text-muted-foreground mb-2 flex h-20 items-center justify-center gap-2 rounded-md border text-sm">
+                    <Loader2 className="size-4 animate-spin" />
+                    {t("popup.capturing")}
+                  </div>
+                ) : (
+                  !payload.hasSelection && (
+                    <textarea
+                      autoFocus
+                      className="bg-muted/40 placeholder:text-muted-foreground mb-2 h-20 w-full resize-none rounded-md border p-2 text-sm outline-none select-text"
+                      placeholder={payload.canReplace ? t("popup.placeholderNoCopy") : t("popup.placeholder")}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                    />
+                  )
                 )}
                 <div className="grid grid-cols-2 gap-0.5">
                   <Highlight

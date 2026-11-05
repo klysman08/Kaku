@@ -3,10 +3,12 @@
 use crate::engine;
 use crate::i18n::{lang, tr};
 use crate::selection::{self, Captured, SelectionError};
+use crate::settings::PopupPrefs;
 use crate::state::{AppState, LockExt};
 use crate::windows::{self, POPUP, TOAST};
 use serde::Serialize;
 use std::sync::atomic::Ordering;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
@@ -21,15 +23,18 @@ pub struct PopupPayload {
     /// Even without a copied selection, "Replace" then pastes over whatever is still
     /// selected there.
     pub can_replace: bool,
+    /// The copy is still on its way (slow app); a "popup:open" with the text follows.
+    pub capturing: bool,
 }
 
 impl PopupPayload {
-    fn from_captured(captured: Option<&Captured>) -> Self {
+    fn from_captured(captured: Option<&Captured>, capturing: bool) -> Self {
         let text = captured.and_then(|c| c.text.clone());
         Self {
             has_selection: text.is_some(),
             text: text.unwrap_or_default(),
             can_replace: captured.is_some(),
+            capturing: capturing && captured.is_some_and(|c| c.text.is_none()),
         }
     }
 }
@@ -132,65 +137,160 @@ pub fn run_direct(app: AppHandle, action: String, clipboard_mode: bool) {
     });
 }
 
-/// Show the palette by the cursor. From a shortcut (`from_app`) the selection is copied
-/// and the focused window remembered for "Replace"; from the tray it opens empty.
+/// How long the palette waits for the copied text before it opens anyway. Text from
+/// slow apps (Electron) is filled in once it arrives, while the palette is already up.
+const QUICK_COPY: Duration = Duration::from_millis(350);
+
+/// Show the palette. From a shortcut (`from_app`) the selection is copied and the focused
+/// window remembered for "Replace"; from the tray it opens empty. Pressing the shortcut
+/// while the palette has focus closes it; pressing it in another app (palette kept open)
+/// takes that app's selection instead.
 pub fn open_popup(app: AppHandle, from_app: bool) {
     let Some(win) = app.get_webview_window(POPUP) else {
         return;
     };
-    if win.is_visible().unwrap_or(false) {
+    if win.is_visible().unwrap_or(false) && (!from_app || win.is_focused().unwrap_or(false)) {
         close_popup(&app, true);
         return;
     }
+    let state = app.state::<AppState>();
+    if state.capturing.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    let session = state.popup_session.fetch_add(1, Ordering::SeqCst) + 1;
+
     tauri::async_runtime::spawn(async move {
+        let started = Instant::now();
+        let mut late = None;
         let captured = if from_app {
-            match capture().await {
-                Ok(c) => Some(c),
-                Err(e) => {
+            let quick = tauri::async_runtime::spawn_blocking(|| {
+                selection::start_copy().map(|p| {
+                    let text = p.wait(QUICK_COPY);
+                    (p, text)
+                })
+            })
+            .await;
+            match quick {
+                Ok(Ok((pending, Some(text)))) => {
+                    selection::restore_if_changed(&pending.previous_clipboard);
+                    Some(pending.into_captured(Some(text)))
+                }
+                Ok(Ok((pending, None))) => {
+                    let placeholder = Captured {
+                        text: None,
+                        target: pending.target,
+                        previous_clipboard: pending.previous_clipboard.clone(),
+                    };
+                    late = Some(pending);
+                    Some(placeholder)
+                }
+                Ok(Err(e)) => {
                     log::warn!("capture failed: {e}");
+                    None
+                }
+                Err(e) => {
+                    log::warn!("capture task failed: {e}");
                     None
                 }
             }
         } else {
             None
         };
-        let payload = PopupPayload::from_captured(captured.as_ref());
+        let copy_ms = started.elapsed().as_millis();
+
+        let payload = PopupPayload::from_captured(captured.as_ref(), late.is_some());
         *app.state::<AppState>().popup.lock_safe() = captured;
         let _ = win.set_size(tauri::LogicalSize::new(
             windows::POPUP_SIZE.0,
             windows::POPUP_SIZE.1,
         ));
-        windows::place_near_cursor(&app, &win, (12.0, 16.0));
+        let prefs = app.state::<AppState>().popup_prefs.lock_safe().clone();
+        windows::place_popup(&app, &win, &prefs);
         let _ = win.emit("popup:open", &payload);
         let _ = win.show();
         let _ = win.set_focus();
+        let selection = match (payload.has_selection, late.is_some()) {
+            (true, _) => "yes",
+            (false, true) => "pending",
+            (false, false) => "no",
+        };
+        log::info!(
+            "palette shown after {}ms (copy {copy_ms}ms, selection: {selection})",
+            started.elapsed().as_millis()
+        );
+
+        // Stay "capturing" until a slow copy is done: a new copy started meanwhile could
+        // mistake our clipboard restore for its own result.
+        if let Some(pending) = late {
+            finish_late_copy(&app, session, pending).await;
+        }
+        app.state::<AppState>()
+            .capturing
+            .store(false, Ordering::SeqCst);
     });
+}
+
+/// Keep waiting for a slow copy and hand the text to the palette that asked for it.
+async fn finish_late_copy(app: &AppHandle, session: u64, pending: selection::PendingCopy) {
+    let joined = tauri::async_runtime::spawn_blocking(move || {
+        let text = pending.wait(selection::COPY_TIMEOUT);
+        (pending, text)
+    })
+    .await;
+    let Ok((pending, text)) = joined else {
+        return;
+    };
+    let elapsed = pending.elapsed().as_millis();
+    selection::restore_if_changed(&pending.previous_clipboard);
+    let state = app.state::<AppState>();
+    if state.popup_session.load(Ordering::SeqCst) != session {
+        return;
+    }
+    let payload = {
+        let mut popup = state.popup.lock_safe();
+        let Some(c) = popup.as_mut() else { return };
+        c.text = text;
+        PopupPayload::from_captured(Some(c), false)
+    };
+    log::info!(
+        "late copy finished after {elapsed}ms (selection: {})",
+        if payload.has_selection { "yes" } else { "no" }
+    );
+    if let Some(w) = app.get_webview_window(POPUP) {
+        let _ = w.emit("popup:open", &payload);
+    }
 }
 
 pub fn popup_payload(app: &AppHandle) -> PopupPayload {
     let state = app.state::<AppState>();
     let popup = state.popup.lock_safe();
-    PopupPayload::from_captured(popup.as_ref())
+    PopupPayload::from_captured(popup.as_ref(), false)
 }
 
-/// Hide the palette, restore the clipboard and (optionally) give focus back.
+/// Hide the palette and (optionally) give focus back. The clipboard was already restored
+/// right after the copy.
 pub fn close_popup(app: &AppHandle, refocus: bool) {
+    let state = app.state::<AppState>();
+    state.popup_session.fetch_add(1, Ordering::SeqCst);
     if let Some(w) = app.get_webview_window(POPUP) {
+        remember_position(app, &w);
         let _ = w.hide();
     }
-    let captured = app.state::<AppState>().popup.lock_safe().take();
-    if let Some(c) = captured {
-        selection::restore(c.previous_clipboard.clone());
-        if refocus {
-            selection::refocus(&c.target);
-        }
+    let captured = state.popup.lock_safe().take();
+    if let Some(c) = captured
+        && refocus
+    {
+        selection::refocus(&c.target);
     }
 }
 
 /// Apply the palette result: paste it into the original app (replacing the selection),
 /// or, when the palette has no origin window, copy it. Returns "pasted" or "copied".
+/// A palette kept open stays on screen, ready for the next selection.
 pub async fn apply_popup(app: &AppHandle, text: String) -> Result<&'static str, String> {
-    if let Some(w) = app.get_webview_window(POPUP) {
+    let keep_open = app.state::<AppState>().popup_prefs.lock_safe().keep_open;
+    if !keep_open && let Some(w) = app.get_webview_window(POPUP) {
+        remember_position(app, &w);
         let _ = w.hide();
     }
     let captured = app.state::<AppState>().popup.lock_safe().take();
@@ -206,6 +306,58 @@ pub async fn apply_popup(app: &AppHandle, text: String) -> Result<&'static str, 
             selection::write_clipboard(&text).map_err(|e| e.to_string())?;
             Ok("copied")
         }
+    }
+}
+
+pub fn popup_prefs(app: &AppHandle) -> PopupPrefs {
+    app.state::<AppState>().popup_prefs.lock_safe().clone()
+}
+
+/// Toggle "keep open" / "lock position". Locking pins the palette where it is now.
+pub fn set_popup_prefs(
+    app: &AppHandle,
+    keep_open: Option<bool>,
+    lock_position: Option<bool>,
+) -> PopupPrefs {
+    let state = app.state::<AppState>();
+    let prefs = {
+        let mut prefs = state.popup_prefs.lock_safe();
+        if let Some(v) = keep_open {
+            prefs.keep_open = v;
+        }
+        if let Some(v) = lock_position {
+            prefs.lock_position = v;
+            if v && let Some(w) = app.get_webview_window(POPUP) {
+                prefs.position = w.outer_position().ok().map(|p| (p.x, p.y));
+            }
+        }
+        prefs.clone()
+    };
+    if let Err(e) = state.store.save_popup_prefs(&prefs) {
+        log::warn!("could not save palette preferences: {e}");
+    }
+    prefs
+}
+
+/// While the position is locked, dragging the palette moves the locked spot.
+fn remember_position(app: &AppHandle, win: &tauri::WebviewWindow) {
+    if !win.is_visible().unwrap_or(false) {
+        return;
+    }
+    let Ok(pos) = win.outer_position() else {
+        return;
+    };
+    let state = app.state::<AppState>();
+    let prefs = {
+        let mut prefs = state.popup_prefs.lock_safe();
+        if !prefs.lock_position || prefs.position == Some((pos.x, pos.y)) {
+            return;
+        }
+        prefs.position = Some((pos.x, pos.y));
+        prefs.clone()
+    };
+    if let Err(e) = state.store.save_popup_prefs(&prefs) {
+        log::warn!("could not save palette preferences: {e}");
     }
 }
 
@@ -266,16 +418,19 @@ mod tests {
             ..copied.clone()
         };
         assert_eq!(
-            PopupPayload::from_captured(Some(&copied)),
+            PopupPayload::from_captured(Some(&copied), false),
             PopupPayload {
                 text: "hello".into(),
                 has_selection: true,
-                can_replace: true
+                can_replace: true,
+                capturing: false
             }
         );
-        let p = PopupPayload::from_captured(Some(&not_copied));
-        assert!(!p.has_selection && p.can_replace && p.text.is_empty());
-        let tray = PopupPayload::from_captured(None);
-        assert!(!tray.has_selection && !tray.can_replace);
+        let p = PopupPayload::from_captured(Some(&not_copied), false);
+        assert!(!p.has_selection && p.can_replace && p.text.is_empty() && !p.capturing);
+        let waiting = PopupPayload::from_captured(Some(&not_copied), true);
+        assert!(waiting.capturing && waiting.can_replace);
+        let tray = PopupPayload::from_captured(None, true);
+        assert!(!tray.has_selection && !tray.can_replace && !tray.capturing);
     }
 }
