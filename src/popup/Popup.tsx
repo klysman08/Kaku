@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   LockOpen,
+  Mic,
   Pin,
   PinOff,
   Replace,
@@ -24,6 +25,7 @@ import { api, type Catalog, type PopupPayload, type PopupPrefs } from "@/lib/ipc
 import { playSound } from "@/lib/sound";
 import { useLiveSettings } from "@/lib/useSettings";
 import { cn } from "@/lib/utils";
+import { appendText, useDictation } from "./useDictation";
 
 type View =
   | { kind: "menu" }
@@ -34,9 +36,9 @@ type View =
 const WIDTH = 340;
 const EMPTY: PopupPayload = { text: "", hasSelection: false, canReplace: false, capturing: false };
 
-/** Mouse-down on the header (not on its buttons) drags the window. */
 const headerButton = "hover:text-foreground hover:bg-accent rounded p-1 transition-colors";
 
+/** Mouse-down on the header (not on its buttons) drags the window. */
 function dragWindow(e: React.MouseEvent) {
   if (e.button !== 0 || (e.target as HTMLElement).closest("button, select, textarea, input")) return;
   e.preventDefault();
@@ -57,15 +59,28 @@ export function Popup() {
   const rootRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLTextAreaElement>(null);
   const requestId = useRef(0);
-
-  const reset = useCallback((p: PopupPayload) => {
-    requestId.current++;
-    setPayload(p);
-    setInput(p.text);
-    setView({ kind: "menu" });
-    setCopied(false);
-    if (p.text || p.capturing) setApplied(false);
+  // Latest text-box value, also updated by dictation before React re-renders.
+  const inputRef = useRef("");
+  const changeInput = useCallback((value: string) => {
+    inputRef.current = value;
+    setInput(value);
   }, []);
+  const dictation = useDictation(useCallback((text: string) => changeInput(appendText(inputRef.current, text)), [changeInput]));
+  const { cancel: cancelDictation, clearError: clearDictationError } = dictation;
+
+  const reset = useCallback(
+    (p: PopupPayload) => {
+      requestId.current++;
+      cancelDictation();
+      clearDictationError();
+      setPayload(p);
+      changeInput(p.text);
+      setView({ kind: "menu" });
+      setCopied(false);
+      if (p.text || p.capturing) setApplied(false);
+    },
+    [cancelDictation, clearDictationError, changeInput],
+  );
 
   useEffect(() => {
     void api.getCatalog().then(setCatalog);
@@ -96,7 +111,10 @@ export function Popup() {
 
   const run = useCallback(
     async (action: string) => {
-      const text = input.trim() ? input : payload.text;
+      // Clicking an action while dictating uses what was said so far.
+      if (dictation.active) await dictation.finish();
+      const current = inputRef.current;
+      const text = current.trim() ? current : payload.text;
       if (!text.trim()) return;
       const id = ++requestId.current;
       playSound("click", sounds);
@@ -113,7 +131,7 @@ export function Popup() {
         setView({ kind: "error", action, title, detail });
       }
     },
-    [input, payload.text, language, sounds, t],
+    [dictation, payload.text, language, sounds, t],
   );
 
   const close = useCallback(() => {
@@ -147,7 +165,8 @@ export function Popup() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        if (view.kind === "menu") close();
+        if (dictation.active) dictation.cancel();
+        else if (view.kind === "menu") close();
         else reset(payload);
         return;
       }
@@ -163,7 +182,7 @@ export function Popup() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [view, actions, run, apply, close, reset, payload]);
+  }, [view, actions, run, apply, close, reset, payload, dictation]);
 
   return (
     <div ref={rootRef} className="p-1.5">
@@ -231,13 +250,46 @@ export function Popup() {
                   </div>
                 ) : (
                   !payload.hasSelection && (
-                    <textarea
-                      autoFocus
-                      className="bg-muted/40 placeholder:text-muted-foreground mb-2 h-20 w-full resize-none rounded-md border p-2 text-sm outline-none select-text"
-                      placeholder={payload.canReplace ? t("popup.placeholderNoCopy") : t("popup.placeholder")}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                    />
+                    <div className="mb-2">
+                      <div className="relative">
+                        <textarea
+                          autoFocus
+                          className="bg-muted/40 placeholder:text-muted-foreground block h-20 w-full resize-none rounded-md border p-2 pr-10 text-sm outline-none select-text"
+                          placeholder={payload.canReplace ? t("popup.placeholderNoCopy") : t("popup.placeholder")}
+                          value={input}
+                          readOnly={dictation.state === "transcribing"}
+                          onChange={(e) => changeInput(e.target.value)}
+                        />
+                        <MicButton
+                          state={dictation.state}
+                          level={dictation.level}
+                          label={dictation.active ? t("popup.stopDictation") : t("popup.dictate")}
+                          onClick={dictation.toggle}
+                        />
+                      </div>
+                      {dictation.state === "listening" && (
+                        <p className="text-muted-foreground mt-1 truncate px-1 text-[11px]">
+                          {dictation.partial ? <span className="italic">{dictation.partial}</span> : t("popup.listening")}
+                        </p>
+                      )}
+                      {dictation.state === "transcribing" && (
+                        <p className="text-muted-foreground mt-1 px-1 text-[11px]">{t("popup.transcribing")}</p>
+                      )}
+                      {dictation.error && (
+                        <div className="text-destructive mt-1 px-1 text-[11px] leading-snug">
+                          <span className="font-medium">{dictation.error.title}.</span> {dictation.error.detail}
+                          {dictation.error.code === "speech_privacy" && (
+                            <button
+                              type="button"
+                              className="text-foreground ml-1 underline underline-offset-2"
+                              onClick={() => void api.openSpeechSettings()}
+                            >
+                              {t("popup.openSpeechSettings")}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )
                 )}
                 <div className="grid grid-cols-2 gap-0.5">
@@ -377,5 +429,45 @@ export function Popup() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+/** Microphone toggle inside the text box; the ring follows the input level. */
+function MicButton({
+  state,
+  level,
+  label,
+  onClick,
+}: {
+  state: "idle" | "starting" | "listening" | "transcribing";
+  level: number;
+  label: string;
+  onClick: () => void;
+}) {
+  const listening = state === "listening";
+  const busy = state === "starting" || state === "transcribing";
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={listening}
+      disabled={busy}
+      onClick={onClick}
+      className={cn(
+        "absolute right-1.5 bottom-1.5 grid size-7 place-items-center rounded-full transition-colors",
+        listening ? "bg-red-500 text-white" : "text-muted-foreground hover:text-foreground hover:bg-accent",
+      )}
+    >
+      {listening && (
+        <motion.span
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-red-500/40"
+          animate={{ scale: 1 + Math.min(level, 1) * 0.7 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        />
+      )}
+      {busy ? <Loader2 className="relative size-3.5 animate-spin" /> : <Mic className="relative size-3.5" />}
+    </button>
   );
 }

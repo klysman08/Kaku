@@ -17,6 +17,7 @@ Kaku is the native desktop sibling of the [TextBetter](https://github.com/klysma
 
 - **11 actions** — Rewrite, Correct, Professional, Appealing, Friendly, Simplify, Summarize, Detail It, Add Emojis, Shorten Text and Translate (20 target languages).
 - **Action palette** — press `Ctrl+Shift+Space` next to any selection; pick an action, review/edit the result, then **Replace** (or Copy).
+- **Voice dictation** — a microphone button in the palette's text box. On Windows, pick live dictation with Windows speech recognition, or the AI provider (record, then transcribe with Gemini or an OpenAI-compatible `/audio/transcriptions` endpoint). Linux uses the AI provider.
 - **Direct shortcuts** — bind any action to its own shortcut (defaults: `Ctrl+Shift+1` Correct, `Ctrl+Shift+2` Translate, `Ctrl+Shift+3` Professional). The selection is replaced immediately; undo with `Ctrl+Z` in the app.
 - **Providers** — Google Gemini, or any **OpenAI-compatible** endpoint: OpenAI, Azure OpenAI / corporate gateways, OpenRouter, LiteLLM, and local **Ollama** / **LM Studio** (text never leaves your machine).
 - **Usage dashboard** — requests, tokens, latency, failure rate, per-day chart, breakdown by action and model, estimated cost from your own per-model prices.
@@ -75,6 +76,7 @@ On X11 everything works out of the box. **Wayland** does not let apps register g
 
 - No telemetry, no analytics, no account.
 - Selected text is sent **only** to the provider you configure.
+- Dictation audio goes to your AI provider, or to Microsoft when Windows dictation is chosen. It is never stored.
 - API keys are stored in Windows Credential Manager / Secret Service, never in files or the UI.
 - Usage metrics (no text) and the optional history live in a local SQLite database. Logs never contain your text.
 
@@ -82,7 +84,7 @@ See [PRIVACY.md](PRIVACY.md).
 
 ## Development
 
-Requirements: Rust (stable), Node 22+, pnpm 10, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS (WebView2 + MSVC on Windows; `libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libssl-dev` on Linux).
+Requirements: Rust (stable), Node 22+, pnpm 10, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS (WebView2 + MSVC on Windows; `libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libssl-dev libasound2-dev` on Linux).
 
 ```bash
 pnpm install

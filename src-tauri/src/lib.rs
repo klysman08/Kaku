@@ -11,6 +11,7 @@ mod secrets;
 mod selection;
 mod settings;
 mod shortcuts;
+mod speech;
 mod state;
 mod tray;
 mod windows;
@@ -168,6 +169,11 @@ pub fn run() {
             commands::popup_close,
             commands::popup_prefs,
             commands::popup_set_prefs,
+            commands::speech_info,
+            commands::speech_start,
+            commands::speech_stop,
+            commands::speech_cancel,
+            commands::open_speech_settings,
             commands::copy_text,
             commands::open_settings,
             commands::usage_summary,

@@ -139,3 +139,52 @@ pub async fn run(
     let _ = app.emit("usage-changed", ());
     result.map_err(CommandError::from)
 }
+
+/// Transcribe a dictation WAV with the configured provider. Counted on the dashboard as
+/// the "dictation" action; never stored in the history.
+pub async fn transcribe(
+    app: &AppHandle,
+    wav: &[u8],
+    language: &str,
+) -> Result<Completion, CommandError> {
+    let state = app.state::<AppState>();
+    let settings = state.settings();
+    let key = secrets::get_key(settings.provider).map_err(|e| CommandError::new("keyring", e))?;
+    let started = Instant::now();
+    let result = ai::transcribe(&settings, key.as_deref(), wav, language).await;
+    let latency_ms = started.elapsed().as_millis() as u64;
+    let model = match settings.provider {
+        crate::settings::ProviderKind::Gemini => settings.gemini_model.as_str(),
+        crate::settings::ProviderKind::Openai => settings.openai_transcription_model.as_str(),
+    };
+    let (input_tokens, output_tokens) = result
+        .as_ref()
+        .map(|c| (c.input_tokens, c.output_tokens))
+        .unwrap_or((0, 0));
+    let usage = UsageRecord {
+        ts: now(),
+        action: "dictation",
+        provider: settings.provider.as_str(),
+        model,
+        input_tokens,
+        output_tokens,
+        latency_ms,
+        ok: result.is_ok(),
+        error_code: result.as_ref().err().map(AiError::code),
+        source: "popup",
+    };
+    if let Err(e) = state.db().record_usage(&usage) {
+        log::error!("failed to record usage: {e}");
+    }
+    match &result {
+        Ok(c) => log::info!(
+            "action=dictation ok latency={latency_ms}ms audio={}KB tokens={}/{}",
+            wav.len() / 1024,
+            c.input_tokens,
+            c.output_tokens
+        ),
+        Err(e) => log::warn!("action=dictation failed code={}", e.code()),
+    }
+    let _ = app.emit("usage-changed", ());
+    result.map_err(CommandError::from)
+}

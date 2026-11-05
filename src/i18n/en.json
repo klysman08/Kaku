@@ -1,6 +1,7 @@
 {
   "app": {
-    "tagline": "AI writing actions in any app"
+    "tagline": "AI writing actions in any app",
+    "madeBy": "Made by"
   },
   "nav": {
     "general": "General",
@@ -22,7 +23,8 @@
     "detail": "Detail It",
     "emojis": "Add Emojis",
     "shorten": "Shorten Text",
-    "translate": "Translate"
+    "translate": "Translate",
+    "dictation": "Dictation"
   },
   "common": {
     "save": "Save",
@@ -61,7 +63,17 @@
     "networkTitle": "Network error",
     "network": "Could not connect. Check your internet connection, corporate proxy or base URL.",
     "emptyTitle": "Empty response",
-    "empty": "The model returned no text (it may have been blocked by safety filters)."
+    "empty": "The model returned no text (it may have been blocked by safety filters).",
+    "speechPrivacyTitle": "Online speech recognition is off",
+    "speechPrivacy": "Windows dictation needs \"Online speech recognition\" (Windows Settings › Privacy & security › Speech). Turn it on, or pick \"AI provider\" in Kaku › General › Voice dictation.",
+    "speechMicTitle": "Microphone unavailable",
+    "speechMic": "No microphone was found or access was denied. Check Privacy › Microphone in the system settings.",
+    "speechLanguageTitle": "Language without dictation",
+    "speechLanguage": "Windows has no dictation installed for this language. Pick another one in General › Voice dictation or install the language's speech pack.",
+    "speechEmptyTitle": "Nothing was heard",
+    "speechEmpty": "No speech was picked up. Speak a little closer to the microphone and try again.",
+    "speechAudioTitle": "Audio hard to understand",
+    "speechAudio": "The audio was too quiet or noisy to recognize."
   },
   "general": {
     "appearance": "Appearance",
@@ -94,7 +106,21 @@
     "autoUpdateDesc": "Only notifies; installing happens when you click About › Install.",
     "window": "Window",
     "minimizeToTray": "Minimize to system tray",
-    "minimizeToTrayDesc": "Minimize and close hide the window in the tray; Kaku keeps running and shortcuts stay active. When off, closing quits the app."
+    "minimizeToTrayDesc": "Minimize and close hide the window in the tray; Kaku keeps running and shortcuts stay active. When off, closing quits the app.",
+    "dictation": "Voice dictation",
+    "dictationDesc": "The microphone button in the palette's text box turns your speech into text.",
+    "speechEngine": "Speech recognition",
+    "engineNative": "Windows (live text)",
+    "engineAi": "AI provider",
+    "engineNativeDesc": "Text appears while you speak. Uses Windows online speech recognition: audio goes to Microsoft.",
+    "engineAiDesc": "Records, then transcribes with your configured provider when you stop. Better punctuation for long text; audio goes to your provider.",
+    "engineLinux": "On Linux, dictation uses the AI provider.",
+    "speechLanguage": "Dictation language",
+    "speechLanguageAuto": "Automatic",
+    "speechLanguageAutoNative": "Windows speech language ({{lang}})",
+    "transcriptionModel": "Transcription model",
+    "transcriptionModelDesc": "For the OpenAI-compatible provider (/audio/transcriptions endpoint). E.g. gpt-4o-mini-transcribe, whisper-1. Ollama has no transcription.",
+    "openSpeechSettings": "Windows speech settings"
   },
   "provider": {
     "welcomeTitle": "Welcome to Kaku",
@@ -230,7 +256,13 @@
     "lockPositionOn": "Position locked: click to open by the cursor",
     "capturing": "Copying the selection…",
     "applied": "Text replaced. Select more text and press the shortcut.",
-    "drag": "Drag to move"
+    "drag": "Drag to move",
+    "dictate": "Dictate (speak)",
+    "stopDictation": "Stop dictating",
+    "listening": "Listening… click the microphone to stop",
+    "transcribing": "Transcribing…",
+    "openSpeechSettings": "Open Windows speech settings",
+    "dictationLimit": "5-minute limit reached."
   },
   "toast": {
     "working": "{{action}}…"

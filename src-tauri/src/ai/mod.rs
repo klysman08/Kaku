@@ -104,9 +104,8 @@ pub async fn complete(
     user_text: &str,
 ) -> Result<Completion, AiError> {
     let client = http_client(settings)?;
-    let mut attempt = 0;
-    loop {
-        let result = match settings.provider {
+    with_retry(|| async {
+        match settings.provider {
             ProviderKind::Gemini => {
                 let key = api_key.ok_or(AiError::MissingKey)?;
                 gemini::complete(&client, key, &settings.gemini_model, system, user_text).await
@@ -122,7 +121,69 @@ pub async fn complete(
                 )
                 .await
             }
-        };
+        }
+    })
+    .await
+}
+
+/// Instructions for dictation. `language` is a BCP-47 tag or "" (auto-detect).
+pub fn transcription_prompt(language: &str) -> String {
+    let lang = if language.is_empty() {
+        "in the language spoken".to_string()
+    } else {
+        format!("in the language spoken (most likely {language})")
+    };
+    format!(
+        "You transcribe dictated audio. Write exactly what the speaker says, {lang}, with natural punctuation and capitalization. Drop filler sounds and false starts. Do not translate, summarize, answer, or comment on the content. If there is no intelligible speech, output nothing.\n{}",
+        crate::actions::NO_EM_DASH_RULE
+    )
+}
+
+/// Transcribe a 16 kHz mono WAV with the configured provider.
+pub async fn transcribe(
+    settings: &Settings,
+    api_key: Option<&str>,
+    wav: &[u8],
+    language: &str,
+) -> Result<Completion, AiError> {
+    use base64::Engine as _;
+    let client = http_client(settings)?;
+    let system = transcription_prompt(language);
+    match settings.provider {
+        ProviderKind::Gemini => {
+            let key = api_key.ok_or(AiError::MissingKey)?;
+            let data = base64::engine::general_purpose::STANDARD.encode(wav);
+            with_retry(|| gemini::transcribe(&client, key, &settings.gemini_model, &system, &data))
+                .await
+        }
+        ProviderKind::Openai => {
+            // The transcription endpoint wants ISO-639-1 ("pt"), not "pt-BR".
+            let iso = language.split('-').next().filter(|l| l.len() == 2);
+            with_retry(|| {
+                openai::transcribe(
+                    &client,
+                    &settings.openai_base_url,
+                    api_key,
+                    &settings.openai_transcription_model,
+                    "Transcribe with punctuation.",
+                    iso,
+                    wav.to_vec(),
+                )
+            })
+            .await
+        }
+    }
+}
+
+/// Up to two retries (429 / 5xx / network) with backoff.
+async fn with_retry<F, Fut, T>(mut call: F) -> Result<T, AiError>
+where
+    F: FnMut() -> Fut,
+    Fut: std::future::Future<Output = Result<T, AiError>>,
+{
+    let mut attempt = 0;
+    loop {
+        let result = call().await;
         match result {
             Err(e) if e.retryable() && attempt < 2 => {
                 attempt += 1;
@@ -177,6 +238,13 @@ pub(crate) async fn read_error(resp: reqwest::Response) -> AiError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn transcription_prompt_mentions_language_and_rules() {
+        let p = transcription_prompt("pt-BR");
+        assert!(p.contains("pt-BR") && p.contains("em dash"));
+        assert!(transcription_prompt("").contains("in the language spoken,"));
+    }
 
     #[test]
     fn estimates_tokens() {

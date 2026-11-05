@@ -270,6 +270,7 @@ pub fn popup_payload(app: &AppHandle) -> PopupPayload {
 /// Hide the palette and (optionally) give focus back. The clipboard was already restored
 /// right after the copy.
 pub fn close_popup(app: &AppHandle, refocus: bool) {
+    crate::speech::cancel();
     let state = app.state::<AppState>();
     state.popup_session.fetch_add(1, Ordering::SeqCst);
     if let Some(w) = app.get_webview_window(POPUP) {

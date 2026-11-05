@@ -83,6 +83,63 @@ pub async fn complete(
     parse_response(&v, text)
 }
 
+/// Dictation via `POST /audio/transcriptions` (OpenAI, Azure, Groq, LocalAI...).
+pub async fn transcribe(
+    client: &reqwest::Client,
+    base_url: &str,
+    api_key: Option<&str>,
+    model: &str,
+    prompt: &str,
+    language: Option<&str>,
+    wav: Vec<u8>,
+) -> Result<Completion, AiError> {
+    let file = reqwest::multipart::Part::bytes(wav)
+        .file_name("dictation.wav")
+        .mime_str("audio/wav")
+        .map_err(|e| AiError::Parse {
+            message: e.to_string(),
+        })?;
+    let mut form = reqwest::multipart::Form::new()
+        .text("model", model.to_string())
+        .text("response_format", "json")
+        .text("prompt", prompt.to_string())
+        .part("file", file);
+    if let Some(lang) = language {
+        form = form.text("language", lang.to_string());
+    }
+    let req = client
+        .post(format!("{base_url}/audio/transcriptions"))
+        .multipart(form);
+    let resp = with_auth(req, api_key).send().await?;
+    if !resp.status().is_success() {
+        return Err(read_error(resp).await);
+    }
+    let v: Value = resp.json().await?;
+    parse_transcription(&v)
+}
+
+pub fn parse_transcription(v: &Value) -> Result<Completion, AiError> {
+    let text = v
+        .get("text")
+        .and_then(Value::as_str)
+        .ok_or_else(|| AiError::Parse {
+            message: "missing text".into(),
+        })?
+        .trim()
+        .to_string();
+    if text.is_empty() {
+        return Err(AiError::Empty);
+    }
+    let input = v.pointer("/usage/input_tokens").and_then(Value::as_u64);
+    let output = v.pointer("/usage/output_tokens").and_then(Value::as_u64);
+    Ok(Completion {
+        estimated_tokens: input.is_none() || output.is_none(),
+        input_tokens: input.unwrap_or(0),
+        output_tokens: output.unwrap_or_else(|| estimate_tokens(&text)),
+        text,
+    })
+}
+
 pub async fn list_models(
     client: &reqwest::Client,
     base_url: &str,
@@ -130,6 +187,22 @@ mod tests {
         let c = parse_response(&arr, "x").unwrap();
         assert_eq!(c.text, "AB");
         assert!(c.estimated_tokens);
+    }
+
+    #[test]
+    fn parses_transcriptions() {
+        let v = json!({ "text": " Olá, tudo bem? ", "usage": { "input_tokens": 50, "output_tokens": 6 } });
+        let c = parse_transcription(&v).unwrap();
+        assert_eq!(
+            (c.text.as_str(), c.input_tokens, c.output_tokens),
+            ("Olá, tudo bem?", 50, 6)
+        );
+        assert!(!c.estimated_tokens);
+        assert_eq!(
+            parse_transcription(&json!({ "text": "  " })),
+            Err(AiError::Empty)
+        );
+        assert!(parse_transcription(&json!({ "error": "x" })).is_err());
     }
 
     #[test]

@@ -28,12 +28,26 @@ export interface Settings {
   autoUpdate: boolean;
   proxyUrl: string;
   requestTimeoutSecs: number;
+  /** Dictation engine: Windows speech recognition or the configured AI provider. */
+  speechEngine: SpeechEngine;
+  /** BCP-47 tag, "" = system speech language / auto-detect. */
+  speechLanguage: string;
+  openaiTranscriptionModel: string;
   paused: boolean;
   shortcuts: Shortcuts;
   customPrompts: Record<string, string>;
   hiddenActions: string[];
   pricing: Record<string, ModelPrice>;
   onboarded: boolean;
+}
+
+export type SpeechEngine = "native" | "ai";
+
+export interface SpeechInfo {
+  /** Windows speech recognition is available on this machine. */
+  native: boolean;
+  nativeLanguages: { tag: string; name: string }[];
+  systemLanguage: string;
 }
 
 export interface ActionInfo {
@@ -160,6 +174,12 @@ export const api = {
   popupState: () => invoke<PopupPayload>("popup_state"),
   popupApply: (text: string) => invoke<"pasted" | "copied">("popup_apply", { text }),
   popupClose: () => invoke<void>("popup_close"),
+  speechInfo: () => invoke<SpeechInfo>("speech_info"),
+  speechStart: () => invoke<SpeechEngine>("speech_start"),
+  /** Resolves with the transcript (AI engine) or null (native engine streams events). */
+  speechStop: () => invoke<string | null>("speech_stop"),
+  speechCancel: () => invoke<void>("speech_cancel"),
+  openSpeechSettings: () => invoke<void>("open_speech_settings"),
   popupPrefs: () => invoke<PopupPrefs>("popup_prefs"),
   popupSetPrefs: (prefs: Partial<PopupPrefs>) => invoke<PopupPrefs>("popup_set_prefs", prefs),
   copyText: (text: string) => invoke<void>("copy_text", { text }),

@@ -36,8 +36,10 @@ thiserror = "2.0.21"
 log = "0.4.35"
 chrono = { version = "0.4.45", features = ["serde"] }
 keyring = "4.2.0"
-reqwest = { version = "0.13.5", default-features = false, features = ["json", "default-tls", "system-proxy", "http2", "charset"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "default-tls", "system-proxy", "http2", "charset", "multipart"] }
 sys-locale = "0.3.2"
+cpal = "0.18.2"
+base64 = "0.23.1"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
@@ -56,7 +58,7 @@ tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
 
 [target."cfg(windows)".dependencies]
-windows = { version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_Foundation", "Win32_System_DataExchange"] }
+windows = { version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_Foundation", "Win32_System_DataExchange", "Win32_System_Com", "Media_SpeechRecognition", "Globalization", "Foundation", "Foundation_Collections"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"

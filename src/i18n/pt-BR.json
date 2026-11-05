@@ -1,6 +1,7 @@
 {
   "app": {
-    "tagline": "Ações de escrita com IA em qualquer aplicativo"
+    "tagline": "Ações de escrita com IA em qualquer aplicativo",
+    "madeBy": "Feito por"
   },
   "nav": {
     "general": "Geral",
@@ -22,7 +23,8 @@
     "detail": "Detalhar",
     "emojis": "Adicionar emojis",
     "shorten": "Encurtar",
-    "translate": "Traduzir"
+    "translate": "Traduzir",
+    "dictation": "Ditado"
   },
   "common": {
     "save": "Salvar",
@@ -61,7 +63,17 @@
     "networkTitle": "Erro de rede",
     "network": "Não foi possível conectar. Verifique a internet, o proxy corporativo ou a URL base.",
     "emptyTitle": "Resposta vazia",
-    "empty": "O modelo não retornou texto (pode ter sido bloqueado por filtros de segurança)."
+    "empty": "O modelo não retornou texto (pode ter sido bloqueado por filtros de segurança).",
+    "speechPrivacyTitle": "Reconhecimento de fala online desligado",
+    "speechPrivacy": "O ditado do Windows precisa da opção \"Reconhecimento de fala online\" (Configurações do Windows › Privacidade e segurança › Fala). Ative-a ou escolha \"Provedor de IA\" em Kaku › Geral › Ditado por voz.",
+    "speechMicTitle": "Microfone indisponível",
+    "speechMic": "Nenhum microfone foi encontrado ou o acesso foi negado. Verifique Privacidade › Microfone nas configurações do sistema.",
+    "speechLanguageTitle": "Idioma sem ditado",
+    "speechLanguage": "Este idioma não tem ditado instalado no Windows. Escolha outro em Geral › Ditado por voz ou instale o pacote de fala do idioma.",
+    "speechEmptyTitle": "Nada foi ouvido",
+    "speechEmpty": "Não captei fala. Fale um pouco mais perto do microfone e tente de novo.",
+    "speechAudioTitle": "Áudio difícil de entender",
+    "speechAudio": "O áudio estava baixo ou com ruído demais para reconhecer."
   },
   "general": {
     "appearance": "Aparência",
@@ -94,7 +106,21 @@
     "autoUpdateDesc": "Apenas avisa; a instalação acontece só quando você clicar em Sobre › Instalar.",
     "window": "Janela",
     "minimizeToTray": "Minimizar para a bandeja do sistema",
-    "minimizeToTrayDesc": "Minimizar e fechar escondem a janela na bandeja; o Kaku continua rodando e os atalhos seguem ativos. Desligado, fechar encerra o app."
+    "minimizeToTrayDesc": "Minimizar e fechar escondem a janela na bandeja; o Kaku continua rodando e os atalhos seguem ativos. Desligado, fechar encerra o app.",
+    "dictation": "Ditado por voz",
+    "dictationDesc": "O botão de microfone na caixa de texto da paleta transforma sua fala em texto.",
+    "speechEngine": "Reconhecimento de fala",
+    "engineNative": "Windows (texto ao vivo)",
+    "engineAi": "Provedor de IA",
+    "engineNativeDesc": "O texto aparece enquanto você fala. Usa o reconhecimento de fala online do Windows: o áudio vai para a Microsoft.",
+    "engineAiDesc": "Grava e, ao parar, transcreve com o provedor configurado. Melhor pontuação para textos longos; o áudio vai para o seu provedor.",
+    "engineLinux": "No Linux o ditado usa o provedor de IA.",
+    "speechLanguage": "Idioma do ditado",
+    "speechLanguageAuto": "Automático",
+    "speechLanguageAutoNative": "Idioma de fala do Windows ({{lang}})",
+    "transcriptionModel": "Modelo de transcrição",
+    "transcriptionModelDesc": "Para o provedor OpenAI-compatível (endpoint /audio/transcriptions). Ex.: gpt-4o-mini-transcribe, whisper-1. O Ollama não oferece transcrição.",
+    "openSpeechSettings": "Configurações de fala do Windows"
   },
   "provider": {
     "welcomeTitle": "Bem-vindo ao Kaku",
@@ -230,7 +256,13 @@
     "lockPositionOn": "Posição fixada: clique para abrir junto ao cursor",
     "capturing": "Copiando a seleção…",
     "applied": "Texto substituído. Selecione outro texto e use o atalho.",
-    "drag": "Arraste para mover"
+    "drag": "Arraste para mover",
+    "dictate": "Ditar (falar)",
+    "stopDictation": "Parar de ditar",
+    "listening": "Ouvindo… clique no microfone para parar",
+    "transcribing": "Transcrevendo…",
+    "openSpeechSettings": "Abrir configurações de fala do Windows",
+    "dictationLimit": "Limite de 5 minutos atingido."
   },
   "toast": {
     "working": "{{action}}…"

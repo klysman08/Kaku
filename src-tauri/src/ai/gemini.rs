@@ -72,6 +72,36 @@ pub async fn complete(
     parse_response(&v, text)
 }
 
+/// Dictation: the recorded WAV goes inline (well under the 20 MB inline limit).
+pub fn transcription_body(system: &str, wav_base64: &str) -> Value {
+    json!({
+        "systemInstruction": { "parts": [{ "text": system }] },
+        "contents": [{ "role": "user", "parts": [
+            { "inlineData": { "mimeType": "audio/wav", "data": wav_base64 } }
+        ] }]
+    })
+}
+
+pub async fn transcribe(
+    client: &reqwest::Client,
+    api_key: &str,
+    model: &str,
+    system: &str,
+    wav_base64: &str,
+) -> Result<Completion, AiError> {
+    let resp = client
+        .post(format!("{BASE}/models/{model}:generateContent"))
+        .header("x-goog-api-key", api_key)
+        .json(&transcription_body(system, wav_base64))
+        .send()
+        .await?;
+    if !resp.status().is_success() {
+        return Err(read_error(resp).await);
+    }
+    let v: Value = resp.json().await?;
+    parse_response(&v, "")
+}
+
 /// Same filter as the extension: text-capable Gemini ≥ 3, no TTS/image/embedding/live
 /// variants; flash models first, then by id descending.
 pub fn filter_models(v: &Value) -> Vec<ModelInfo> {

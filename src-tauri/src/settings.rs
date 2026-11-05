@@ -81,6 +81,14 @@ pub struct Settings {
     pub proxy_url: String,
     pub request_timeout_secs: u64,
 
+    /// Dictation in the palette: "native" (Windows speech recognition, live text) or
+    /// "ai" (record, then transcribe with the configured provider). Linux: "ai" only.
+    pub speech_engine: String,
+    /// BCP-47 tag for dictation ("" = system speech language / auto-detect).
+    pub speech_language: String,
+    /// OpenAI-compatible transcription model (`/audio/transcriptions`).
+    pub openai_transcription_model: String,
+
     /// Temporarily disables all global shortcuts.
     pub paused: bool,
     pub shortcuts: Shortcuts,
@@ -112,6 +120,9 @@ impl Default for Settings {
             auto_update: true,
             proxy_url: String::new(),
             request_timeout_secs: 45,
+            speech_engine: default_speech_engine().into(),
+            speech_language: String::new(),
+            openai_transcription_model: "gpt-4o-mini-transcribe".into(),
             paused: false,
             shortcuts: Shortcuts::default(),
             custom_prompts: BTreeMap::new(),
@@ -140,11 +151,27 @@ impl Settings {
             .trim_end_matches('/')
             .to_string();
         self.proxy_url = self.proxy_url.trim().to_string();
+        if !speech_engine_available(&self.speech_engine) {
+            self.speech_engine = default_speech_engine().into();
+        }
+        self.speech_language = self.speech_language.trim().to_string();
+        if self.openai_transcription_model.trim().is_empty() {
+            self.openai_transcription_model = Settings::default().openai_transcription_model;
+        }
         if self.target_language.trim().is_empty() {
             self.target_language = Settings::default().target_language;
         }
         self
     }
+}
+
+/// Native dictation exists only on Windows.
+pub fn default_speech_engine() -> &'static str {
+    if cfg!(windows) { "native" } else { "ai" }
+}
+
+pub fn speech_engine_available(engine: &str) -> bool {
+    engine == "ai" || (engine == "native" && cfg!(windows))
 }
 
 /// Palette window preferences, toggled from the palette itself. Kept apart from

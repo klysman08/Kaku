@@ -7,7 +7,7 @@ use crate::flows::{self, PopupPayload};
 use crate::settings::{PopupPrefs, ProviderKind, Settings};
 use crate::shortcuts::{self, ShortcutFailure};
 use crate::state::{AppState, LockExt};
-use crate::{actions, secrets, selection, tray, windows};
+use crate::{actions, secrets, selection, speech, tray, windows};
 use serde::Serialize;
 use std::time::Instant;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -163,6 +163,48 @@ pub fn popup_set_prefs(
     lock_position: Option<bool>,
 ) -> PopupPrefs {
     flows::set_popup_prefs(&app, keep_open, lock_position)
+}
+
+#[tauri::command]
+pub async fn speech_info() -> speech::SpeechInfo {
+    tauri::async_runtime::spawn_blocking(speech::info)
+        .await
+        .unwrap_or(speech::SpeechInfo {
+            native: false,
+            native_languages: Vec::new(),
+            system_language: String::new(),
+        })
+}
+
+/// Start dictation; returns the engine used ("native" | "ai").
+#[tauri::command]
+pub async fn speech_start(app: AppHandle) -> Res<String> {
+    speech::start(&app).await.map(str::to_string)
+}
+
+/// Stop dictation; the AI engine returns the transcript.
+#[tauri::command]
+pub async fn speech_stop(app: AppHandle) -> Res<Option<String>> {
+    speech::stop(&app).await
+}
+
+#[tauri::command]
+pub fn speech_cancel() {
+    speech::cancel();
+}
+
+/// Windows' speech privacy page ("Online speech recognition").
+#[tauri::command]
+pub fn open_speech_settings(app: AppHandle) {
+    use tauri_plugin_opener::OpenerExt;
+    let url = if cfg!(windows) {
+        "ms-settings:privacy-speech"
+    } else {
+        return;
+    };
+    if let Err(e) = app.opener().open_url(url, None::<&str>) {
+        log::warn!("could not open speech settings: {e}");
+    }
 }
 
 #[tauri::command]
