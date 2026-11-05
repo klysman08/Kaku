@@ -1,6 +1,6 @@
 [package]
 name = "kaku"
-version = "0.2.0"
+version = "0.3.0"
 description = "AI writing actions (rewrite, correct, translate) for any desktop app"
 authors = ["Kaku contributors"]
 license = "MIT"
