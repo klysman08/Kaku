@@ -94,10 +94,10 @@
     "autoUpdateDesc": "Apenas avisa; a instalação acontece só quando você clicar em Sobre › Instalar.",
     "window": "Janela",
     "minimizeToTray": "Minimizar para a bandeja do sistema",
-    "minimizeToTrayDesc": "Minimizar e fechar escondem a janela na bandeja; o KokoroKaku continua rodando e os atalhos seguem ativos. Desligado, fechar encerra o app."
+    "minimizeToTrayDesc": "Minimizar e fechar escondem a janela na bandeja; o Kaku continua rodando e os atalhos seguem ativos. Desligado, fechar encerra o app."
   },
   "provider": {
-    "welcomeTitle": "Bem-vindo ao KokoroKaku",
+    "welcomeTitle": "Bem-vindo ao Kaku",
     "welcomeBody": "Para começar, escolha um provedor e informe sua API key. Depois selecione um texto em qualquer aplicativo e pressione {{shortcut}}.",
     "welcomeDone": "Entendi",
     "provider": "Provedor",
@@ -143,7 +143,7 @@
     "pause": "Pausar atalhos",
     "tipsTitle": "Dicas",
     "tipAltGr": "Evite Ctrl+Alt+letra: em teclados ABNT2 isso equivale a AltGr e pode bloquear caracteres como / e ?.",
-    "tipClipboard": "O KokoroKaku usa a área de transferência por um instante para copiar e colar; o conteúdo anterior (texto) é restaurado logo depois.",
+    "tipClipboard": "O Kaku usa a área de transferência por um instante para copiar e colar; o conteúdo anterior (texto) é restaurado logo depois.",
     "waylandTitle": "Sessão Wayland detectada",
     "waylandBody": "O Wayland bloqueia atalhos globais e simulação de teclado. Crie atalhos no GNOME/KDE que executem:",
     "cliTitle": "Linha de comando",
@@ -215,11 +215,15 @@
     "translateTo": "Traduzir",
     "working": "{{action}}…",
     "result": "Resultado (editável)",
-    "replace": "Substituir",
+    "replace": "Substituir seleção",
     "copyResult": "Copiar",
-    "noTarget": "Sem seleção de origem: o resultado será copiado.",
+    "noTarget": "Aberto pela bandeja: o resultado será copiado.",
     "settings": "Configurações",
-    "hint": "1–9 ações · Enter substitui · Esc fecha"
+    "hint": "1–9 ações · Enter substitui · Esc fecha",
+    "copyClose": "Copiar e fechar",
+    "placeholderNoCopy": "Não consegui copiar a seleção. Cole o texto aqui (Ctrl+V) ou digite…",
+    "replaceHint": "Substituir cola o resultado no app de origem, no lugar do texto selecionado. Enter também substitui.",
+    "replaceHintNoCopy": "Substituir cola o resultado no app de origem, no lugar do que estiver selecionado lá."
   },
   "toast": {
     "working": "{{action}}…"

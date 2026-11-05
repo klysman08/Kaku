@@ -1,9 +1,9 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "KokoroKaku",
-  "mainBinaryName": "kokorokaku",
+  "productName": "Kaku",
+  "mainBinaryName": "kaku",
   "version": "../package.json",
-  "identifier": "io.github.klysman08.kokorokaku",
+  "identifier": "io.github.klysman08.kaku",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "KokoroKaku",
+        "title": "Kaku",
         "url": "index.html",
         "width": 1000,
         "height": 720,
@@ -40,12 +40,12 @@
       "appimage"
     ],
     "createUpdaterArtifacts": true,
-    "publisher": "KokoroKaku contributors",
+    "publisher": "Kaku contributors",
     "copyright": "MIT License",
     "category": "Productivity",
     "shortDescription": "AI writing actions for any app",
     "longDescription": "Select text in any application and rewrite, correct, translate or change its tone with a global shortcut.",
-    "homepage": "https://github.com/klysman08/KokoroKaku",
+    "homepage": "https://github.com/klysman08/Kaku",
     "license": "MIT",
     "licenseFile": "../LICENSE",
     "icon": [
@@ -86,7 +86,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDY0NDg0NDA2NzZFRkZENTcKUldSWC9lOTJCa1JJWk4rZWNtVTVYblpnbVZNWXBZTUE1YmZTemx4cEhDTmJBNHB0Njg4eVJkeGUK",
       "endpoints": [
-        "https://github.com/klysman08/KokoroKaku/releases/latest/download/latest.json"
+        "https://github.com/klysman08/Kaku/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

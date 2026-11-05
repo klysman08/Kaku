@@ -12,7 +12,9 @@ import { ShortcutRecorder } from "../ShortcutRecorder";
 export function ShortcutsTab({ draft, saved, update, commit, catalog, failures }: TabProps) {
   const { t } = useTranslation();
   const [info, setInfo] = useState<AppInfo | null>(null);
-  useEffect(() => void api.appInfo().then(setInfo), []);
+  useEffect(() => {
+    void api.appInfo().then(setInfo);
+  }, []);
 
   const combos = useMemo(() => ({ popup: draft.shortcuts.popup, ...draft.shortcuts.actions }), [draft.shortcuts]);
   const duplicates = useMemo(() => findDuplicates(combos), [combos]);
@@ -53,9 +55,7 @@ export function ShortcutsTab({ draft, saved, update, commit, catalog, failures }
         <div className="mb-6">
           <Notice tone="warn" title={t("shortcuts.waylandTitle")}>
             {t("shortcuts.waylandBody")}
-            <pre className="bg-muted mt-2 rounded-md p-2 font-mono text-xs">
-              kokorokaku --action review --clipboard{"\n"}kokorokaku --popup
-            </pre>
+            <pre className="bg-muted mt-2 rounded-md p-2 font-mono text-xs">kaku --action review --clipboard{"\n"}kaku --popup</pre>
           </Notice>
         </div>
       )}
@@ -101,7 +101,7 @@ export function ShortcutsTab({ draft, saved, update, commit, catalog, failures }
         <Row label={t("shortcuts.clipboardTitle")} description={t("shortcuts.tipClipboard")} />
         <Row
           label={t("shortcuts.cliTitle")}
-          description={<code className="font-mono">kokorokaku --action &lt;id&gt; [--clipboard] · --popup · --settings</code>}
+          description={<code className="font-mono">kaku --action &lt;id&gt; [--clipboard] · --popup · --settings</code>}
         />
       </Section>
     </div>

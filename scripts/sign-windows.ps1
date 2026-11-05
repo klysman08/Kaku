@@ -31,7 +31,7 @@ param([Parameter(Mandatory = $true)][string]$File)
 $ErrorActionPreference = 'Stop'
 $mode = if ($env:WINDOWS_SIGN_MODE) { $env:WINDOWS_SIGN_MODE.ToLowerInvariant() } else { 'none' }
 $timestamp = if ($env:WINDOWS_TIMESTAMP_URL) { $env:WINDOWS_TIMESTAMP_URL } else { 'http://timestamp.digicert.com' }
-$description = 'KokoroKaku'
+$description = 'Kaku'
 
 function Find-SignTool {
   $cmd = Get-Command signtool.exe -ErrorAction SilentlyContinue
@@ -58,7 +58,7 @@ switch ($mode) {
 
   'pfx' {
     Require @('WINDOWS_CERTIFICATE', 'WINDOWS_CERTIFICATE_PASSWORD')
-    $pfx = Join-Path ([IO.Path]::GetTempPath()) "kokorokaku-$([Guid]::NewGuid()).pfx"
+    $pfx = Join-Path ([IO.Path]::GetTempPath()) "kaku-$([Guid]::NewGuid()).pfx"
     try {
       [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WINDOWS_CERTIFICATE))
       & (Find-SignTool) sign /fd SHA256 /td SHA256 /tr $timestamp /d $description `

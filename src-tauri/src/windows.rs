@@ -13,7 +13,7 @@ const TOAST_SIZE: (f64, f64) = (230.0, 48.0);
 
 pub fn create_aux_windows(app: &AppHandle) -> tauri::Result<()> {
     WebviewWindowBuilder::new(app, POPUP, WebviewUrl::App("popup.html".into()))
-        .title("KokoroKaku")
+        .title("Kaku")
         .inner_size(POPUP_SIZE.0, POPUP_SIZE.1)
         .decorations(false)
         .transparent(true)
@@ -25,7 +25,7 @@ pub fn create_aux_windows(app: &AppHandle) -> tauri::Result<()> {
         .build()?;
 
     WebviewWindowBuilder::new(app, TOAST, WebviewUrl::App("toast.html".into()))
-        .title("KokoroKaku")
+        .title("Kaku")
         .inner_size(TOAST_SIZE.0, TOAST_SIZE.1)
         .decorations(false)
         .transparent(true)

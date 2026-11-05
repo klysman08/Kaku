@@ -1,11 +1,11 @@
 <div align="center">
-  <img src="assets/app-icon.png" width="96" alt="Logo do KokoroKaku" />
-  <h1>KokoroKaku</h1>
+  <img src="assets/app-icon.png" width="96" alt="Logo do Kaku" />
+  <h1>Kaku</h1>
   <p><strong>Ações de escrita com IA em qualquer aplicativo.</strong> Selecione um texto em qualquer lugar — Outlook, Teams, Word, Slack, sua IDE — aperte um atalho e reescreva, corrija, traduza ou mude o tom ali mesmo.</p>
   <p><a href="README.md">English</a></p>
 </div>
 
-O KokoroKaku é a versão desktop nativa da extensão [TextBetter](https://github.com/klysman08/TextBetter), feita com [Tauri 2](https://tauri.app) (Rust + React). Fica na bandeja do sistema e funciona em todo o **Windows** e **Linux**.
+O Kaku é a versão desktop nativa da extensão [TextBetter](https://github.com/klysman08/TextBetter), feita com [Tauri 2](https://tauri.app) (Rust + React). Fica na bandeja do sistema e funciona em todo o **Windows** e **Linux**.
 
 ## Recursos
 
@@ -20,23 +20,23 @@ O KokoroKaku é a versão desktop nativa da extensão [TextBetter](https://githu
 
 ## Instalação
 
-Baixe em [Releases](https://github.com/klysman08/KokoroKaku/releases/latest): `*_x64-setup.exe` (por usuário, sem admin), `*.msi` (implantação pelo TI), `.deb`, `.rpm` ou `.AppImage`. Confira com `SHA256SUMS.txt` ou `gh attestation verify <arquivo> --repo klysman08/KokoroKaku`.
+Baixe em [Releases](https://github.com/klysman08/Kaku/releases/latest): `*_x64-setup.exe` (por usuário, sem admin), `*.msi` (implantação pelo TI), `.deb`, `.rpm` ou `.AppImage`. Confira com `SHA256SUMS.txt` ou `gh attestation verify <arquivo> --repo klysman08/Kaku`.
 
-Abra o KokoroKaku › **Provedor e API**, cole sua API key (ex.: [Google AI Studio](https://aistudio.google.com/apikey)) e clique em **Testar conexão**.
+Abra o Kaku › **Provedor e API**, cole sua API key (ex.: [Google AI Studio](https://aistudio.google.com/apikey)) e clique em **Testar conexão**.
 
 ## Como a substituição funciona
 
-Não existe API para ler a seleção de outros programas, então o KokoroKaku faz o que você faria: envia `Ctrl+C`, lê a área de transferência, chama o modelo, coloca o resultado na área de transferência, envia `Ctrl+V` e **restaura o texto que estava antes**. As entradas temporárias ficam fora do histórico/sincronização da área de transferência do Windows.
+Não existe API para ler a seleção de outros programas, então o Kaku faz o que você faria: envia `Ctrl+C`, lê a área de transferência, chama o modelo, coloca o resultado na área de transferência, envia `Ctrl+V` e **restaura o texto que estava antes**. As entradas temporárias ficam fora do histórico/sincronização da área de transferência do Windows.
 
 ## Linha de comando e Wayland
 
 ```
-kokorokaku --action <id> [--clipboard]
-kokorokaku --popup
-kokorokaku --settings
+kaku --action <id> [--clipboard]
+kaku --popup
+kaku --settings
 ```
 
-No **Wayland** não há atalhos globais nem simulação de teclado: crie atalhos no GNOME/KDE que executem `kokorokaku --action review --clipboard` ou `kokorokaku --popup`.
+No **Wayland** não há atalhos globais nem simulação de teclado: crie atalhos no GNOME/KDE que executem `kaku --action review --clipboard` ou `kaku --popup`.
 
 ## Privacidade
 

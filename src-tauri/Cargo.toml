@@ -1,10 +1,10 @@
 [package]
-name = "kokorokaku"
+name = "kaku"
 version = "0.1.0"
 description = "AI writing actions (rewrite, correct, translate) for any desktop app"
-authors = ["KokoroKaku contributors"]
+authors = ["Kaku contributors"]
 license = "MIT"
-repository = "https://github.com/klysman08/KokoroKaku"
+repository = "https://github.com/klysman08/Kaku"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,7 +13,7 @@ edition = "2024"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "kokorokaku_lib"
+name = "kaku_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

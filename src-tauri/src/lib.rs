@@ -1,4 +1,4 @@
-//! KokoroKaku — AI writing actions for any desktop app.
+//! Kaku — AI writing actions for any desktop app.
 
 mod actions;
 mod ai;
@@ -70,7 +70,7 @@ pub fn run() {
 
             let store = SettingsStore::new(&config_dir);
             let settings = store.load();
-            let db = db::Db::open(&data_dir.join("kokorokaku.db"))?;
+            let db = db::Db::open(&data_dir.join("kaku.db"))?;
             if settings.history_enabled {
                 let _ = db.prune_history(engine::now(), settings.history_retention_days);
             }
@@ -96,7 +96,7 @@ pub fn run() {
             let failures = shortcuts::apply(&handle);
             if !failures.is_empty() {
                 let l = i18n::lang(&handle.state::<AppState>().settings());
-                flows::notify(&handle, "KokoroKaku", i18n::tr(l, "shortcutConflict"));
+                flows::notify(&handle, "Kaku", i18n::tr(l, "shortcutConflict"));
             }
 
             let args: Vec<String> = std::env::args().collect();
@@ -166,7 +166,7 @@ pub fn run() {
             commands::window_close,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running KokoroKaku");
+        .expect("error while running Kaku");
 }
 
 fn minimize_to_tray(app: &tauri::AppHandle) -> bool {

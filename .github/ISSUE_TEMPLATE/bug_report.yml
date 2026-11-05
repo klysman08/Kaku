@@ -5,7 +5,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: KokoroKaku version
+      label: Kaku version
       description: Settings › About
     validations:
       required: true

@@ -7,7 +7,7 @@ Only the latest release receives security fixes. Installed apps update themselve
 ## Reporting a vulnerability
 
 Please **do not open a public issue**. Use GitHub's private vulnerability reporting:
-[Report a vulnerability](https://github.com/klysman08/KokoroKaku/security/advisories/new).
+[Report a vulnerability](https://github.com/klysman08/Kaku/security/advisories/new).
 
 Include affected version, OS, reproduction steps and impact. You can expect an acknowledgement within 7 days.
 

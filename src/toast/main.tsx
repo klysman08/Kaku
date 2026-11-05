@@ -25,7 +25,7 @@ function Toast() {
     <div className="p-1.5">
       <div className="bg-popover text-popover-foreground flex h-9 items-center gap-2.5 rounded-full border px-4 text-sm shadow-lg">
         <Loader2 className="size-4 animate-spin" />
-        <span className="truncate">{t("toast.working", { action: action ? actionLabel(t, action) : "KokoroKaku" })}</span>
+        <span className="truncate">{t("toast.working", { action: action ? actionLabel(t, action) : "Kaku" })}</span>
       </div>
     </div>
   );

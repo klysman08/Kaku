@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    kokorokaku_lib::run()
+    kaku_lib::run()
 }

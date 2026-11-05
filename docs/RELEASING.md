@@ -31,13 +31,13 @@ Versões com hífen (`1.0.0-beta.1`) saem como *pre-release* e não são entregu
 
 | Secret | Valor |
 |---|---|
-| `TAURI_SIGNING_PRIVATE_KEY` | conteúdo de `~/.tauri/kokorokaku.key` |
+| `TAURI_SIGNING_PRIVATE_KEY` | conteúdo de `~/.tauri/kaku.key` |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | senha da chave (vazio se gerada sem senha) |
 
 A chave pública correspondente já está em `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`). **Guarde a chave privada num cofre** (ex.: gerenciador de senhas): sem ela não é possível publicar atualizações para quem já instalou. Para gerar uma nova (invalida o updater das versões anteriores):
 
 ```bash
-pnpm tauri signer generate -w ~/.tauri/kokorokaku.key
+pnpm tauri signer generate -w ~/.tauri/kaku.key
 ```
 
 ### Opcionais — assinatura de código Windows (Authenticode)

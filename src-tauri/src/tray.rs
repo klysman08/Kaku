@@ -40,12 +40,12 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
 pub fn create(app: &AppHandle) -> tauri::Result<()> {
     let menu = build_menu(app)?;
     let mut builder = TrayIconBuilder::with_id(TRAY_ID)
-        .tooltip("KokoroKaku")
+        .tooltip("Kaku")
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "open" => windows::show_main(app),
-            "palette" => flows::open_popup(app.clone()),
+            "palette" => flows::open_popup(app.clone(), false),
             "pause" => toggle_pause(app),
             "copy-original" => {
                 let original = app.state::<AppState>().last_original.lock_safe().clone();

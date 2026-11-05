@@ -72,7 +72,10 @@ export interface ShortcutFailure {
 
 export interface PopupPayload {
   text: string;
-  hasTarget: boolean;
+  /** The selection was copied automatically. */
+  hasSelection: boolean;
+  /** The origin window is known: "Replace" pastes the result back there. */
+  canReplace: boolean;
 }
 
 export interface Totals {

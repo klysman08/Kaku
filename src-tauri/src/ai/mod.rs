@@ -84,7 +84,7 @@ pub fn http_client(settings: &Settings) -> Result<reqwest::Client, AiError> {
     let mut builder = reqwest::Client::builder()
         .timeout(Duration::from_secs(settings.request_timeout_secs))
         .connect_timeout(Duration::from_secs(10))
-        .user_agent(concat!("KokoroKaku/", env!("CARGO_PKG_VERSION")));
+        .user_agent(concat!("Kaku/", env!("CARGO_PKG_VERSION")));
     if !settings.proxy_url.is_empty() {
         let proxy = reqwest::Proxy::all(&settings.proxy_url).map_err(|e| AiError::Network {
             message: format!("invalid proxy URL: {e}"),

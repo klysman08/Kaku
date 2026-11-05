@@ -9,7 +9,7 @@ import { api, type AppInfo } from "@/lib/ipc";
 import type { TabProps } from "../App";
 import { Notice, Row, Section } from "../components";
 
-const REPO = "https://github.com/klysman08/KokoroKaku";
+const REPO = "https://github.com/klysman08/Kaku";
 
 export function AboutTab(_: TabProps) {
   const { t } = useTranslation();
@@ -23,7 +23,9 @@ export function AboutTab(_: TabProps) {
     | { kind: "error"; message: string }
   >({ kind: "idle" });
 
-  useEffect(() => void api.appInfo().then(setInfo), []);
+  useEffect(() => {
+    void api.appInfo().then(setInfo);
+  }, []);
 
   async function checkNow() {
     setState({ kind: "checking" });
@@ -56,9 +58,9 @@ export function AboutTab(_: TabProps) {
   return (
     <div>
       <div className="mb-8 flex items-center gap-4">
-        <img src="/app-icon.png" alt="" className="size-14 rounded-2xl" />
+        <img src="/app-icon.svg" alt="" draggable={false} className="size-14 rounded-2xl shadow-sm" />
         <div>
-          <div className="text-lg font-semibold">KokoroKaku</div>
+          <div className="text-lg font-semibold">Kaku</div>
           <div className="text-muted-foreground text-sm">{info && t("about.version", { version: info.version })}</div>
         </div>
       </div>

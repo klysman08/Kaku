@@ -24,8 +24,6 @@ static CLIPBOARD: LazyLock<Mutex<Option<Clipboard>>> = LazyLock::new(|| Mutex::n
 
 #[derive(Debug, thiserror::Error)]
 pub enum SelectionError {
-    #[error("no text is selected")]
-    NoSelection,
     #[error("clipboard error: {0}")]
     Clipboard(String),
     #[error("keyboard simulation failed: {0}")]
@@ -41,7 +39,9 @@ pub struct Target {
 
 #[derive(Debug, Clone)]
 pub struct Captured {
-    pub text: String,
+    /// Selected text, or None when the app had nothing selected (or refused to copy).
+    pub text: Option<String>,
+    /// Where to paste the result back, even when nothing was selected.
     pub target: Target,
     /// Clipboard text before we touched it, restored after pasting.
     pub previous_clipboard: Option<String>,
@@ -130,12 +130,25 @@ fn wait_for_modifiers_release(timeout: Duration) {
         use windows::Win32::UI::Input::KeyboardAndMouse::{
             GetAsyncKeyState, VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
         };
+        // SAFETY: GetAsyncKeyState only reads key state.
+        let down = |vk: u16| unsafe { GetAsyncKeyState(i32::from(vk)) } as u16 & 0x8000 != 0;
+
+        // The hotkey's letter was swallowed by RegisterHotKey, so releasing Alt (or Win)
+        // now looks like a lone tap: Windows/Electron apps (Notion, Slack, VS Code...)
+        // then activate their menu bar (or the Start menu) and our Ctrl+C is lost.
+        // Tapping an unassigned virtual key while the modifier is still down "uses" it,
+        // the same trick AutoHotkey calls the menu mask key.
+        if (down(VK_MENU.0) || down(VK_LWIN.0) || down(VK_RWIN.0))
+            && let Ok(mut e) = Enigo::new(&Settings::default())
+        {
+            let _ = e.key(Key::Other(MENU_MASK_VK), Direction::Click);
+        }
+
         let start = Instant::now();
         let held = || {
             [VK_SHIFT, VK_CONTROL, VK_MENU, VK_LWIN, VK_RWIN]
                 .iter()
-                // SAFETY: GetAsyncKeyState only reads key state.
-                .any(|vk| unsafe { GetAsyncKeyState(i32::from(vk.0)) } as u16 & 0x8000 != 0)
+                .any(|vk| down(vk.0))
         };
         while held() && start.elapsed() < timeout {
             sleep(Duration::from_millis(15));
@@ -152,6 +165,10 @@ fn wait_for_modifiers_release(timeout: Duration) {
         }
     }
 }
+
+/// VK 0xE8 is unassigned by Windows, so tapping it has no effect in any app.
+#[cfg(windows)]
+const MENU_MASK_VK: u32 = 0xE8;
 
 fn chord(letter: char) -> Result<(), SelectionError> {
     let err = |e: &dyn std::fmt::Display| SelectionError::Input(e.to_string());
@@ -171,7 +188,12 @@ fn chord(letter: char) -> Result<(), SelectionError> {
     r.map_err(|x| err(&x))
 }
 
-/// Copy the current selection of the focused app.
+/// How long to wait for the app to put the copied text on the clipboard. Electron
+/// apps (Notion, Teams, Slack) write asynchronously and can take well over 500 ms.
+const COPY_TIMEOUT: Duration = Duration::from_millis(1500);
+
+/// Copy the current selection of the focused app. Always returns the target window so
+/// the result can be pasted back even when nothing could be copied.
 pub fn capture() -> Result<Captured, SelectionError> {
     let target = foreground_target();
     wait_for_modifiers_release(Duration::from_millis(1200));
@@ -180,19 +202,24 @@ pub fn capture() -> Result<Captured, SelectionError> {
     clear();
     chord('c')?;
 
-    let deadline = Instant::now() + Duration::from_millis(700);
+    let deadline = Instant::now() + COPY_TIMEOUT;
     while Instant::now() < deadline {
         sleep(Duration::from_millis(25));
         if let Some(text) = read_text() {
             return Ok(Captured {
-                text,
+                text: Some(text),
                 target,
                 previous_clipboard,
             });
         }
     }
-    restore(previous_clipboard);
-    Err(SelectionError::NoSelection)
+    log::info!("no text copied from the focused app within {COPY_TIMEOUT:?}");
+    restore(previous_clipboard.clone());
+    Ok(Captured {
+        text: None,
+        target,
+        previous_clipboard,
+    })
 }
 
 /// Paste `text` into `target`, then restore the user's clipboard.

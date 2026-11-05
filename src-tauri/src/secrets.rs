@@ -3,7 +3,7 @@
 
 use crate::settings::ProviderKind;
 
-const SERVICE: &str = "io.github.klysman08.kokorokaku";
+const SERVICE: &str = "io.github.klysman08.kaku";
 
 fn entry(provider: ProviderKind) -> Result<keyring::Entry, String> {
     keyring::Entry::new(SERVICE, &format!("{}-api-key", provider.as_str()))

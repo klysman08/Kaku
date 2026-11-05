@@ -33,7 +33,7 @@ pub fn handle(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     let state = app.state::<AppState>();
     let command = state.shortcut_map.lock_safe().get(&shortcut.id()).cloned();
     match command {
-        Some(ShortcutCommand::Popup) => flows::open_popup(app.clone()),
+        Some(ShortcutCommand::Popup) => flows::open_popup(app.clone(), true),
         Some(ShortcutCommand::Action(id)) => flows::run_direct(app.clone(), id, false),
         None => {}
     }

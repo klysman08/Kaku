@@ -24,8 +24,8 @@ pub fn lang(settings: &Settings) -> Lang {
 pub fn tr(lang: Lang, key: &str) -> &'static str {
     use Lang::*;
     match (key, lang) {
-        ("open", Pt) => "Abrir KokoroKaku",
-        ("open", En) => "Open KokoroKaku",
+        ("open", Pt) => "Abrir Kaku",
+        ("open", En) => "Open Kaku",
         ("palette", Pt) => "Abrir paleta de ações",
         ("palette", En) => "Open action palette",
         ("pause", Pt) => "Pausar atalhos",
@@ -36,14 +36,14 @@ pub fn tr(lang: Lang, key: &str) -> &'static str {
         ("quit", En) => "Quit",
         ("noSelection", Pt) => "Nenhum texto selecionado. Selecione um texto e tente de novo.",
         ("noSelection", En) => "No text selected. Select some text and try again.",
-        ("errorTitle", Pt) => "KokoroKaku: falha na ação",
-        ("errorTitle", En) => "KokoroKaku: action failed",
-        ("missingKey", Pt) => "Configure sua API key nas configurações do KokoroKaku.",
-        ("missingKey", En) => "Set your API key in KokoroKaku settings.",
+        ("errorTitle", Pt) => "Kaku: falha na ação",
+        ("errorTitle", En) => "Kaku: action failed",
+        ("missingKey", Pt) => "Configure sua API key nas configurações do Kaku.",
+        ("missingKey", En) => "Set your API key in Kaku settings.",
         ("updateTitle", Pt) => "Atualização disponível",
         ("updateTitle", En) => "Update available",
-        ("updateBody", Pt) => "Abra KokoroKaku › Sobre para instalar a versão",
-        ("updateBody", En) => "Open KokoroKaku › About to install version",
+        ("updateBody", Pt) => "Abra Kaku › Sobre para instalar a versão",
+        ("updateBody", En) => "Open Kaku › About to install version",
         ("clipboardDone", Pt) => "Resultado copiado para a área de transferência.",
         ("clipboardDone", En) => "Result copied to the clipboard.",
         ("shortcutConflict", Pt) => {

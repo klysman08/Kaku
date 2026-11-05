@@ -94,10 +94,10 @@
     "autoUpdateDesc": "Only notifies; installing happens when you click About › Install.",
     "window": "Window",
     "minimizeToTray": "Minimize to system tray",
-    "minimizeToTrayDesc": "Minimize and close hide the window in the tray; KokoroKaku keeps running and shortcuts stay active. When off, closing quits the app."
+    "minimizeToTrayDesc": "Minimize and close hide the window in the tray; Kaku keeps running and shortcuts stay active. When off, closing quits the app."
   },
   "provider": {
-    "welcomeTitle": "Welcome to KokoroKaku",
+    "welcomeTitle": "Welcome to Kaku",
     "welcomeBody": "To get started, pick a provider and enter your API key. Then select text in any app and press {{shortcut}}.",
     "welcomeDone": "Got it",
     "provider": "Provider",
@@ -143,7 +143,7 @@
     "pause": "Pause shortcuts",
     "tipsTitle": "Tips",
     "tipAltGr": "Avoid Ctrl+Alt+letter: on many European layouts it equals AltGr and can block characters.",
-    "tipClipboard": "KokoroKaku briefly uses the clipboard to copy and paste; your previous (text) clipboard is restored right after.",
+    "tipClipboard": "Kaku briefly uses the clipboard to copy and paste; your previous (text) clipboard is restored right after.",
     "waylandTitle": "Wayland session detected",
     "waylandBody": "Wayland blocks global shortcuts and keyboard simulation. Create GNOME/KDE shortcuts that run:",
     "cliTitle": "Command line",
@@ -215,11 +215,15 @@
     "translateTo": "Translate",
     "working": "{{action}}…",
     "result": "Result (editable)",
-    "replace": "Replace",
+    "replace": "Replace selection",
     "copyResult": "Copy",
-    "noTarget": "No source selection: the result will be copied.",
+    "noTarget": "Opened from the tray: the result will be copied.",
     "settings": "Settings",
-    "hint": "1–9 actions · Enter replaces · Esc closes"
+    "hint": "1–9 actions · Enter replaces · Esc closes",
+    "copyClose": "Copy and close",
+    "placeholderNoCopy": "Couldn't copy the selection. Paste the text here (Ctrl+V) or type…",
+    "replaceHint": "Replace pastes the result into the source app over the selected text. Enter also replaces.",
+    "replaceHintNoCopy": "Replace pastes the result into the source app over whatever is selected there."
   },
   "toast": {
     "working": "{{action}}…"

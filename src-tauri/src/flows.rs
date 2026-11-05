@@ -10,13 +10,28 @@ use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PopupPayload {
+    /// Text copied from the app ("" when nothing could be copied).
     pub text: String,
-    /// False when nothing was selected: the palette works on typed/pasted text and
-    /// "Replace" becomes "Copy".
-    pub has_target: bool,
+    /// True when the selection was copied automatically.
+    pub has_selection: bool,
+    /// True when we know which app/window to paste back into (palette opened by shortcut).
+    /// Even without a copied selection, "Replace" then pastes over whatever is still
+    /// selected there.
+    pub can_replace: bool,
+}
+
+impl PopupPayload {
+    fn from_captured(captured: Option<&Captured>) -> Self {
+        let text = captured.and_then(|c| c.text.clone());
+        Self {
+            has_selection: text.is_some(),
+            text: text.unwrap_or_default(),
+            can_replace: captured.is_some(),
+        }
+    }
 }
 
 pub fn notify(app: &AppHandle, title: &str, body: &str) {
@@ -55,8 +70,17 @@ async fn capture() -> Result<Captured, SelectionError> {
         .unwrap_or(Err(SelectionError::Input("capture task panicked".into())))
 }
 
+async fn paste(text: String, captured: Captured) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        selection::paste(&text, &captured.target, captured.previous_clipboard)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| e.to_string())
+}
+
 /// Direct shortcut: transform the selection in place. With `clipboard_mode` the text
-/// comes from — and goes back to — the clipboard (Wayland / CLI fallback).
+/// comes from, and goes back to, the clipboard (Wayland / CLI fallback).
 pub fn run_direct(app: AppHandle, action: String, clipboard_mode: bool) {
     let state = app.state::<AppState>();
     if state.busy.swap(true, Ordering::SeqCst) {
@@ -65,51 +89,36 @@ pub fn run_direct(app: AppHandle, action: String, clipboard_mode: bool) {
     tauri::async_runtime::spawn(async move {
         let l = lang(&app.state::<AppState>().settings());
         let captured = if clipboard_mode {
-            selection::read_clipboard().map(|text| Captured {
-                text,
+            Ok(Captured {
+                text: selection::read_clipboard(),
                 target: Default::default(),
                 previous_clipboard: None,
             })
         } else {
-            match capture().await {
-                Ok(c) => Some(c),
-                Err(SelectionError::NoSelection) => None,
-                Err(e) => {
-                    log::warn!("capture failed: {e}");
-                    None
-                }
-            }
+            capture().await
         };
 
         match captured {
-            None => notify(&app, "KokoroKaku", tr(l, "noSelection")),
-            Some(cap) => {
+            Err(e) => {
+                log::warn!("capture failed: {e}");
+                notify(&app, "Kaku", tr(l, "noSelection"));
+            }
+            Ok(Captured { text: None, .. }) => notify(&app, "Kaku", tr(l, "noSelection")),
+            Ok(cap) => {
+                let original = cap.text.clone().unwrap_or_default();
                 show_toast(&app, &action);
-                let result = engine::run(
-                    &app,
-                    &action,
-                    &cap.text,
-                    None,
-                    if clipboard_mode { "cli" } else { "shortcut" },
-                )
-                .await;
+                let source = if clipboard_mode { "cli" } else { "shortcut" };
+                let result = engine::run(&app, &action, &original, None, source).await;
                 hide_toast(&app);
                 match result {
                     Ok(done) => {
-                        *app.state::<AppState>().last_original.lock_safe() = Some(cap.text.clone());
+                        *app.state::<AppState>().last_original.lock_safe() = Some(original);
                         let _ = app.emit("action-done", &action);
                         if clipboard_mode {
                             let _ = selection::write_clipboard(&done.text);
-                            notify(&app, "KokoroKaku", tr(l, "clipboardDone"));
-                        } else {
-                            let text = done.text;
-                            let paste = tauri::async_runtime::spawn_blocking(move || {
-                                selection::paste(&text, &cap.target, cap.previous_clipboard)
-                            })
-                            .await;
-                            if let Ok(Err(e)) = paste {
-                                log::error!("paste failed: {e}");
-                            }
+                            notify(&app, "Kaku", tr(l, "clipboardDone"));
+                        } else if let Err(e) = paste(done.text, cap).await {
+                            log::error!("paste failed: {e}");
                         }
                     }
                     Err(e) => {
@@ -123,8 +132,9 @@ pub fn run_direct(app: AppHandle, action: String, clipboard_mode: bool) {
     });
 }
 
-/// Palette shortcut: capture the selection (if any) and show the palette by the cursor.
-pub fn open_popup(app: AppHandle) {
+/// Show the palette by the cursor. From a shortcut (`from_app`) the selection is copied
+/// and the focused window remembered for "Replace"; from the tray it opens empty.
+pub fn open_popup(app: AppHandle, from_app: bool) {
     let Some(win) = app.get_webview_window(POPUP) else {
         return;
     };
@@ -133,14 +143,18 @@ pub fn open_popup(app: AppHandle) {
         return;
     }
     tauri::async_runtime::spawn(async move {
-        let captured = capture().await.ok();
-        let payload = PopupPayload {
-            text: captured
-                .as_ref()
-                .map(|c| c.text.clone())
-                .unwrap_or_default(),
-            has_target: captured.is_some(),
+        let captured = if from_app {
+            match capture().await {
+                Ok(c) => Some(c),
+                Err(e) => {
+                    log::warn!("capture failed: {e}");
+                    None
+                }
+            }
+        } else {
+            None
         };
+        let payload = PopupPayload::from_captured(captured.as_ref());
         *app.state::<AppState>().popup.lock_safe() = captured;
         let _ = win.set_size(tauri::LogicalSize::new(
             windows::POPUP_SIZE.0,
@@ -154,12 +168,9 @@ pub fn open_popup(app: AppHandle) {
 }
 
 pub fn popup_payload(app: &AppHandle) -> PopupPayload {
-    let guard = app.state::<AppState>();
-    let popup = guard.popup.lock_safe();
-    PopupPayload {
-        text: popup.as_ref().map(|c| c.text.clone()).unwrap_or_default(),
-        has_target: popup.is_some(),
-    }
+    let state = app.state::<AppState>();
+    let popup = state.popup.lock_safe();
+    PopupPayload::from_captured(popup.as_ref())
 }
 
 /// Hide the palette, restore the clipboard and (optionally) give focus back.
@@ -176,8 +187,8 @@ pub fn close_popup(app: &AppHandle, refocus: bool) {
     }
 }
 
-/// Apply the palette result: paste over the original selection, or copy when there is none.
-/// Returns "pasted" or "copied".
+/// Apply the palette result: paste it into the original app (replacing the selection),
+/// or, when the palette has no origin window, copy it. Returns "pasted" or "copied".
 pub async fn apply_popup(app: &AppHandle, text: String) -> Result<&'static str, String> {
     if let Some(w) = app.get_webview_window(POPUP) {
         let _ = w.hide();
@@ -185,13 +196,10 @@ pub async fn apply_popup(app: &AppHandle, text: String) -> Result<&'static str, 
     let captured = app.state::<AppState>().popup.lock_safe().take();
     match captured {
         Some(c) => {
-            *app.state::<AppState>().last_original.lock_safe() = Some(c.text.clone());
-            tauri::async_runtime::spawn_blocking(move || {
-                selection::paste(&text, &c.target, c.previous_clipboard)
-            })
-            .await
-            .map_err(|e| e.to_string())?
-            .map_err(|e| e.to_string())?;
+            if let Some(original) = c.text.clone() {
+                *app.state::<AppState>().last_original.lock_safe() = Some(original);
+            }
+            paste(text, c).await?;
             Ok("pasted")
         }
         None => {
@@ -201,7 +209,7 @@ pub async fn apply_popup(app: &AppHandle, text: String) -> Result<&'static str, 
     }
 }
 
-/// Command line: `kokorokaku [--action <id> [--clipboard]] [--popup] [--settings] [--background]`.
+/// Command line: `kaku [--action <id> [--clipboard]] [--popup] [--settings] [--background]`.
 /// Also used for arguments forwarded by a second instance.
 pub fn handle_cli(app: &AppHandle, args: &[String], first_launch: bool) {
     let mut iter = args.iter().skip(1);
@@ -227,7 +235,7 @@ pub fn handle_cli(app: &AppHandle, args: &[String], first_launch: bool) {
             log::warn!("unknown action from CLI: {id}");
         }
     } else if popup {
-        open_popup(app.clone());
+        open_popup(app.clone(), true);
     } else if settings || !background || !first_launch {
         windows::show_main(app);
     }
@@ -235,6 +243,8 @@ pub fn handle_cli(app: &AppHandle, args: &[String], first_launch: bool) {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn cli_flags_are_documented() {
         // Keep README and --help text in sync with these flags.
@@ -242,5 +252,30 @@ mod tests {
         for flag in ["--action", "--clipboard", "--popup", "--settings"] {
             assert!(readme.contains(flag), "README is missing {flag}");
         }
+    }
+
+    #[test]
+    fn popup_payload_offers_replace_whenever_origin_is_known() {
+        let copied = Captured {
+            text: Some("hello".into()),
+            target: Default::default(),
+            previous_clipboard: None,
+        };
+        let not_copied = Captured {
+            text: None,
+            ..copied.clone()
+        };
+        assert_eq!(
+            PopupPayload::from_captured(Some(&copied)),
+            PopupPayload {
+                text: "hello".into(),
+                has_selection: true,
+                can_replace: true
+            }
+        );
+        let p = PopupPayload::from_captured(Some(&not_copied));
+        assert!(!p.has_selection && p.can_replace && p.text.is_empty());
+        let tray = PopupPayload::from_captured(None);
+        assert!(!tray.has_selection && !tray.can_replace);
     }
 }

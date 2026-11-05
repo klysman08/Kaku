@@ -49,7 +49,9 @@ export function App() {
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => scrollRef.current?.scrollTo({ top: 0 }), [tab]);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [tab]);
   const savedRef = useRef<Settings | null>(null);
   const draftRef = useRef<Settings | null>(null);
   savedRef.current = saved;
@@ -127,7 +129,7 @@ export function App() {
         <div data-tauri-drag-region className="flex items-center gap-2.5 px-2 pt-4 pb-6">
           <img src="/app-icon.svg" alt="" draggable={false} className="pointer-events-none size-8 rounded-lg shadow-sm" />
           <div className="pointer-events-none">
-            <div className="text-sm font-semibold">KokoroKaku</div>
+            <div className="text-sm font-semibold">Kaku</div>
             <div className="text-muted-foreground text-[11px] leading-tight">{t("app.tagline")}</div>
           </div>
         </div>

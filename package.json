@@ -1,12 +1,12 @@
 {
-  "name": "kokorokaku",
+  "name": "kaku",
   "private": true,
   "version": "0.1.0",
   "description": "AI writing actions (rewrite, correct, translate, change tone) for any desktop app.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/klysman08/KokoroKaku.git"
+    "url": "https://github.com/klysman08/Kaku.git"
   },
   "type": "module",
   "packageManager": "pnpm@10.30.2",

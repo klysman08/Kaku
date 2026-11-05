@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
-import { ArrowLeft, Check, ClipboardCopy, Globe, Loader2, RotateCcw, Settings, X } from "lucide-react";
+import { ArrowLeft, Check, ClipboardCopy, Globe, Loader2, Replace, RotateCcw, Settings, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Highlight } from "@animate-ui/react/primitives/effects/highlight";
 import { ACTION_ICONS, actionLabel, describeError } from "@/lib/actions";
@@ -23,7 +23,7 @@ export function Popup() {
   const { t } = useTranslation();
   const settings = useLiveSettings();
   const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [payload, setPayload] = useState<PopupPayload>({ text: "", hasTarget: false });
+  const [payload, setPayload] = useState<PopupPayload>({ text: "", hasSelection: false, canReplace: false });
   const [input, setInput] = useState("");
   const [language, setLanguage] = useState("");
   const [view, setView] = useState<View>({ kind: "menu" });
@@ -146,7 +146,7 @@ export function Popup() {
             </button>
           )}
           {view.kind === "menu" && <img src="/app-icon.svg" alt="" className="pointer-events-none size-4 rounded" />}
-          <span data-tauri-drag-region>KokoroKaku AI Writer</span>
+          <span data-tauri-drag-region>Kaku AI Writer</span>
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"
@@ -172,11 +172,11 @@ export function Popup() {
           >
             {view.kind === "menu" && (
               <div className="p-2">
-                {!payload.hasTarget && (
+                {!payload.hasSelection && (
                   <textarea
                     autoFocus
                     className="bg-muted/40 placeholder:text-muted-foreground mb-2 h-20 w-full resize-none rounded-md border p-2 text-sm outline-none select-text"
-                    placeholder={t("popup.placeholder")}
+                    placeholder={payload.canReplace ? t("popup.placeholderNoCopy") : t("popup.placeholder")}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                   />
@@ -195,7 +195,7 @@ export function Popup() {
                           key={a.id}
                           data-value={a.id}
                           type="button"
-                          autoFocus={payload.hasTarget && i === 0}
+                          autoFocus={payload.hasSelection && i === 0}
                           onClick={() => void run(a.id)}
                           className="focus-visible:ring-ring/60 group flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm outline-none focus-visible:ring-2"
                         >
@@ -252,7 +252,13 @@ export function Popup() {
                   autoFocus
                   className="bg-muted/40 h-44 w-full resize-none rounded-md border p-2 text-sm leading-relaxed outline-none select-text"
                 />
-                {!payload.hasTarget && <p className="text-muted-foreground px-1 pt-1 text-[11px]">{t("popup.noTarget")}</p>}
+                <p className="text-muted-foreground px-1 pt-1 text-[11px]">
+                  {payload.canReplace
+                    ? payload.hasSelection
+                      ? t("popup.replaceHint")
+                      : t("popup.replaceHintNoCopy")
+                    : t("popup.noTarget")}
+                </p>
                 <div className="mt-2 flex items-center gap-1.5">
                   <button
                     type="button"
@@ -277,8 +283,8 @@ export function Popup() {
                       "bg-primary text-primary-foreground hover:bg-primary/90 ml-auto flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
                     )}
                   >
-                    <Check className="size-4" />
-                    {payload.hasTarget ? t("popup.replace") : t("popup.copyResult")}
+                    {payload.canReplace ? <Replace className="size-4" /> : <Check className="size-4" />}
+                    {payload.canReplace ? t("popup.replace") : t("popup.copyClose")}
                   </button>
                 </div>
               </div>

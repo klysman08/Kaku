@@ -65,7 +65,7 @@ execFileSync("cargo", ["update", "--workspace", "--offline"], { cwd: resolve(roo
 
 run("git", ["add", "package.json", "src-tauri/Cargo.toml", "src-tauri/Cargo.lock"]);
 run("git", ["commit", "-m", `chore(release): ${tag}`]);
-run("git", ["tag", "-a", tag, "-m", `KokoroKaku ${tag}`]);
+run("git", ["tag", "-a", tag, "-m", `Kaku ${tag}`]);
 
 if (push) {
   run("git", ["push", "--follow-tags", "origin", branch]);

@@ -79,7 +79,7 @@ export function HistoryTab({ saved }: TabProps) {
 
   async function exportCsv() {
     const path = await save({
-      defaultPath: `kokorokaku-history-${new Date().toISOString().slice(0, 10)}.csv`,
+      defaultPath: `kaku-history-${new Date().toISOString().slice(0, 10)}.csv`,
       filters: [{ name: "CSV", extensions: ["csv"] }],
     });
     if (!path) return;

@@ -86,10 +86,10 @@ jobs:
           AZURE_SIGNING_PROFILE: ${{ vars.AZURE_SIGNING_PROFILE }}
         with:
           tagName: ${{ env.TAG }}
-          releaseName: KokoroKaku ${{ env.TAG }}
+          releaseName: Kaku ${{ env.TAG }}
           releaseBody: |
             ### Downloads
-            - **Windows**: `KokoroKaku_*_x64-setup.exe` (per-user, no admin) or `KokoroKaku_*_x64_en-US.msi` (IT / Intune / GPO deployment)
+            - **Windows**: `Kaku_*_x64-setup.exe` (per-user, no admin) or `Kaku_*_x64_en-US.msi` (IT / Intune / GPO deployment)
             - **Linux**: `.deb` (Debian/Ubuntu), `.rpm` (Fedora/openSUSE) or `.AppImage`
 
             Verify downloads with `SHA256SUMS.txt` or `gh attestation verify <file> --repo ${{ github.repository }}`.
