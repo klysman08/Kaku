@@ -66,7 +66,7 @@ jobs:
         if: runner.os == 'Windows' && vars.WINDOWS_SIGN_MODE == 'azure'
         run: cargo install trusted-signing-cli --locked
 
-      - uses: tauri-apps/tauri-action@v0
+      - uses: tauri-apps/tauri-action@v1
         id: tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
