@@ -1,6 +1,5 @@
 <div align="center">
-  <img src="assets/app-icon.png" width="96" alt="Kaku logo" />
-  <h1>Kaku</h1>
+  <img src="docs/images/og.png" alt="Kaku: AI writing actions in any app" />
   <p><strong>AI writing actions in any app.</strong> Select text anywhere — Outlook, Teams, Word, Slack, your IDE — press a shortcut, and rewrite, correct, translate or change its tone in place.</p>
   <p>
     <a href="README.pt-BR.md">Português</a> ·
@@ -12,6 +11,28 @@
 </div>
 
 Kaku is the native desktop sibling of the [TextBetter](https://github.com/klysman08/TextBetter) browser extension, built with [Tauri 2](https://tauri.app) (Rust + React). It runs in the system tray and works system-wide on **Windows** and **Linux**.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/palette.png" width="280" alt="Action palette" /><br /><sub>Action palette</sub></td>
+    <td align="center"><img src="docs/images/palette-result.png" width="280" alt="Review, edit, replace" /><br /><sub>Review, edit, replace</sub></td>
+    <td align="center"><img src="docs/images/palette-dictation.png" width="280" alt="Voice dictation" /><br /><sub>Voice dictation</sub></td>
+  </tr>
+</table>
+
+<img src="docs/images/dashboard.png" alt="Usage dashboard" />
+
+<details>
+<summary>More screenshots</summary>
+
+| | |
+|---|---|
+| <img src="docs/images/provider.png" alt="Provider and API key" /><br /><sub>Provider and API key</sub> | <img src="docs/images/shortcuts.png" alt="Global shortcuts" /><br /><sub>Global shortcuts</sub> |
+| <img src="docs/images/history.png" alt="Local history" /><br /><sub>Local history</sub> | <img src="docs/images/dashboard-light.png" alt="Light theme" /><br /><sub>Light theme</sub> |
+
+</details>
 
 ## Features
 
@@ -93,6 +114,8 @@ pnpm check        # typecheck + vitest + rustfmt + clippy + cargo test
 pnpm tauri build  # build installers locally
 ```
 
+The UI also runs in a plain browser on sample data: start `pnpm dev` and open `http://localhost:1420/?mock&tab=dashboard` (or `/popup.html?mock&scene=result`). With the dev server running, `node scripts/screenshots.mjs` regenerates every image in `docs/images/`, including the social preview, using headless Edge or Chrome.
+
 Project layout:
 
 ```
@@ -101,14 +124,16 @@ src/                 React UI (one Vite entry per window)
   popup/             action palette
   toast/             progress indicator for direct shortcuts
   lib/ipc.ts         typed bindings to the Rust commands
+  dev/mock.ts        sample backend for browser previews and screenshots (dev only)
 src-tauri/src/
   actions.rs         actions and their prompts (single source of truth)
   ai/                Gemini and OpenAI-compatible clients
   selection.rs       copy selection / paste result / restore clipboard
+  speech/            dictation: Windows speech recognition, microphone recorder
   shortcuts.rs       global shortcuts
   db.rs              SQLite usage + history
   secrets.rs         OS credential vault
-scripts/             release + Windows signing hooks
+scripts/             release, Windows signing hooks, screenshots
 ```
 
 ## Releasing

@@ -1,0 +1,134 @@
+<!doctype html>
+<!-- Source of docs/images/og.png (1280x640). Rendered by scripts/screenshots.mjs through
+     the Vite dev server, after the palette screenshots it embeds. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Kaku social preview</title>
+    <style>
+      @font-face {
+        font-family: "Inter Variable";
+        src: url("/node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2");
+        font-weight: 100 900;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      html,
+      body {
+        width: 1280px;
+        height: 640px;
+        overflow: hidden;
+      }
+      body {
+        font-family: "Inter Variable", "Segoe UI", sans-serif;
+        color: #fafafa;
+        background:
+          radial-gradient(640px 420px at 88% 30%, rgba(37, 99, 235, 0.32), transparent 70%),
+          radial-gradient(520px 360px at 8% 110%, rgba(239, 68, 68, 0.14), transparent 70%),
+          #09090b;
+        position: relative;
+      }
+      /* Faint dot grid, fading out to the right. */
+      body::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+        background-size: 28px 28px;
+        mask-image: linear-gradient(90deg, #000 0%, transparent 70%);
+      }
+      .copy {
+        position: absolute;
+        left: 84px;
+        top: 92px;
+        width: 560px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
+      .brand img {
+        width: 92px;
+        height: 92px;
+        border-radius: 22px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      }
+      h1 {
+        font-size: 92px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        line-height: 1;
+      }
+      .tagline {
+        margin-top: 36px;
+        font-size: 40px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+      }
+      .tagline span {
+        color: #a1a1aa;
+      }
+      .verbs {
+        margin-top: 22px;
+        font-size: 22px;
+        color: #a1a1aa;
+        line-height: 1.5;
+      }
+      .chips {
+        position: absolute;
+        left: 84px;
+        bottom: 64px;
+        width: 500px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .chip {
+        font-size: 17px;
+        font-weight: 500;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: #d4d4d8;
+      }
+      .shot {
+        position: absolute;
+        width: 412px;
+        filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6));
+      }
+      .back {
+        right: 288px;
+        top: 112px;
+        transform: rotate(-4deg);
+        opacity: 0.92;
+      }
+      .front {
+        right: 58px;
+        top: 70px;
+        transform: rotate(3deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="copy">
+      <div class="brand">
+        <img src="/public/app-icon.svg" alt="" />
+        <h1>Kaku</h1>
+      </div>
+      <p class="tagline">AI writing actions<br /><span>in any app.</span></p>
+      <p class="verbs">Select text, press a shortcut: rewrite, correct, translate or dictate, then replace it in place.</p>
+    </div>
+    <div class="chips">
+      <span class="chip">Windows &amp; Linux</span>
+      <span class="chip">Gemini · OpenAI-compatible</span>
+      <span class="chip">Open source · MIT</span>
+    </div>
+    <img class="shot back" src="/docs/images/palette-dictation.png" alt="" />
+    <img class="shot front" src="/docs/images/palette-result.png" alt="" />
+  </body>
+</html>

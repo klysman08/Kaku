@@ -5,7 +5,8 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Copy, Minus, Square, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const win = getCurrentWindow();
+/** Looked up on use, so nothing touches the Tauri runtime at import time. */
+const win = () => getCurrentWindow();
 
 function Control({
   label,
@@ -43,8 +44,8 @@ export function TitleBar({ title, minimizeToTray }: { title: string; minimizeToT
   const [maximized, setMaximized] = useState(false);
 
   useEffect(() => {
-    void win.isMaximized().then(setMaximized);
-    const un = win.onResized(() => void win.isMaximized().then(setMaximized));
+    void win().isMaximized().then(setMaximized);
+    const un = win().onResized(() => void win().isMaximized().then(setMaximized));
     return () => void un.then((f) => f());
   }, []);
 
@@ -56,7 +57,7 @@ export function TitleBar({ title, minimizeToTray }: { title: string; minimizeToT
       <Control label={minimizeToTray ? t("window.minimizeToTray") : t("window.minimize")} onClick={() => void invoke("window_minimize")}>
         <Minus />
       </Control>
-      <Control label={maximized ? t("window.restore") : t("window.maximize")} onClick={() => void win.toggleMaximize()}>
+      <Control label={maximized ? t("window.restore") : t("window.maximize")} onClick={() => void win().toggleMaximize()}>
         {maximized ? <Copy className="-scale-x-100" /> : <Square />}
       </Control>
       <Control label={minimizeToTray ? t("window.closeToTray") : t("window.close")} onClick={() => void invoke("window_close")} danger>

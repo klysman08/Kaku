@@ -4,8 +4,20 @@ import "@/styles.css";
 import "@/i18n";
 import { App } from "./App";
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+function render() {
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+}
+
+// `?mock` on the dev server renders with sample data instead of the Rust backend.
+if (import.meta.env.DEV && new URLSearchParams(location.search).has("mock")) {
+  void import("@/dev/mock").then((m) => {
+    m.install("main");
+    render();
+  });
+} else {
+  render();
+}

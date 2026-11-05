@@ -69,6 +69,8 @@ pub(crate) fn emit_state(app: &AppHandle, state: &str) {
     let _ = app.emit("speech:state", state);
 }
 
+/// Only the Windows engine reports errors after start; the AI engine returns them.
+#[cfg(windows)]
 pub(crate) fn emit_error(app: &AppHandle, err: &CommandError) {
     let _ = app.emit("speech:error", err);
 }

@@ -1,11 +1,34 @@
 <div align="center">
-  <img src="assets/app-icon.png" width="96" alt="Logo do Kaku" />
-  <h1>Kaku</h1>
+  <img src="docs/images/og.png" alt="Kaku: ações de escrita com IA em qualquer aplicativo" />
   <p><strong>Ações de escrita com IA em qualquer aplicativo.</strong> Selecione um texto em qualquer lugar — Outlook, Teams, Word, Slack, sua IDE — aperte um atalho e reescreva, corrija, traduza ou mude o tom ali mesmo.</p>
   <p><a href="README.md">English</a></p>
 </div>
 
 O Kaku é a versão desktop nativa da extensão [TextBetter](https://github.com/klysman08/TextBetter), feita com [Tauri 2](https://tauri.app) (Rust + React). Fica na bandeja do sistema e funciona em todo o **Windows** e **Linux**.
+
+## Capturas de tela
+
+Interface mostrada em inglês; o app também está em português.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/palette.png" width="280" alt="Paleta de ações" /><br /><sub>Paleta de ações</sub></td>
+    <td align="center"><img src="docs/images/palette-result.png" width="280" alt="Revise, edite, substitua" /><br /><sub>Revise, edite, substitua</sub></td>
+    <td align="center"><img src="docs/images/palette-dictation.png" width="280" alt="Ditado por voz" /><br /><sub>Ditado por voz</sub></td>
+  </tr>
+</table>
+
+<img src="docs/images/dashboard.png" alt="Dashboard de uso" />
+
+<details>
+<summary>Mais capturas</summary>
+
+| | |
+|---|---|
+| <img src="docs/images/provider.png" alt="Provedor e API key" /><br /><sub>Provedor e API key</sub> | <img src="docs/images/shortcuts.png" alt="Atalhos globais" /><br /><sub>Atalhos globais</sub> |
+| <img src="docs/images/history.png" alt="Histórico local" /><br /><sub>Histórico local</sub> | <img src="docs/images/dashboard-light.png" alt="Tema claro" /><br /><sub>Tema claro</sub> |
+
+</details>
 
 ## Recursos
 
