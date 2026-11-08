@@ -12,6 +12,7 @@ pub const BUBBLE: &str = "bubble";
 
 pub const POPUP_SIZE: (f64, f64) = (340.0, 372.0);
 const TOAST_SIZE: (f64, f64) = (230.0, 48.0);
+#[cfg(windows)]
 pub const BUBBLE_SIZE: (f64, f64) = (36.0, 36.0);
 
 pub fn create_aux_windows(app: &AppHandle) -> tauri::Result<()> {
