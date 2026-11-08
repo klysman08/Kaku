@@ -90,7 +90,11 @@ pub struct Settings {
     /// OpenAI-compatible transcription model (`/audio/transcriptions`).
     pub openai_transcription_model: String,
 
-    /// Temporarily disables all global shortcuts.
+    /// Show a small Kaku button next to freshly selected text (Windows); clicking it
+    /// opens the palette with that selection.
+    pub selection_bubble: bool,
+
+    /// Temporarily disables all global shortcuts (and the selection button).
     pub paused: bool,
     pub shortcuts: Shortcuts,
     /// Custom system prompts keyed by action id. Must contain "CRITICAL:" to be used.
@@ -124,6 +128,7 @@ impl Default for Settings {
             speech_engine: default_speech_engine().into(),
             speech_language: String::new(),
             openai_transcription_model: "gpt-4o-mini-transcribe".into(),
+            selection_bubble: true,
             paused: false,
             shortcuts: Shortcuts::default(),
             custom_prompts: BTreeMap::new(),

@@ -156,6 +156,8 @@
   "shortcuts": {
     "popupTitle": "Paleta de ações",
     "popupDesc": "Selecione um texto em qualquer aplicativo e use este atalho para abrir a paleta ao lado do cursor. Sem seleção, a paleta abre vazia para você digitar ou colar.",
+    "bubble": "Botão na seleção",
+    "bubbleDesc": "Mostra um pequeno botão do Kaku ao lado do texto selecionado com o mouse (arrastar, clique duplo ou Shift+clique). Clique nele para abrir a paleta com essa seleção.",
     "directTitle": "Atalhos diretos",
     "directDesc": "Aplicam a ação na seleção e substituem o texto na hora, sem abrir a paleta. Use Ctrl+Z no aplicativo para desfazer.",
     "record": "Gravar",

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/form";
 import { ACTION_ICONS, actionLabel } from "@/lib/actions";
 import { api, type AppInfo } from "@/lib/ipc";
 import { findDuplicates } from "@/lib/shortcut";
@@ -68,6 +69,11 @@ export function ShortcutsTab({ draft, saved, update, commit, catalog, failures }
             onChange={(v) => update({ shortcuts: { ...draft.shortcuts, popup: v } })}
           />
         </Row>
+        {info?.os === "windows" && (
+          <Row label={t("shortcuts.bubble")} description={t("shortcuts.bubbleDesc")}>
+            <Switch checked={draft.selectionBubble} onCheckedChange={(selectionBubble) => update({ selectionBubble })} />
+          </Row>
+        )}
       </Section>
 
       <Section title={t("shortcuts.directTitle")} description={t("shortcuts.directDesc")}>

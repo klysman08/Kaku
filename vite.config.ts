@@ -22,6 +22,7 @@ export default defineConfig(() => ({
         settings: resolve(root, "index.html"),
         popup: resolve(root, "popup.html"),
         toast: resolve(root, "toast.html"),
+        bubble: resolve(root, "bubble.html"),
       },
     },
   },

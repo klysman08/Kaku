@@ -2,6 +2,7 @@
 
 mod actions;
 mod ai;
+mod bubble;
 mod commands;
 mod db;
 mod engine;
@@ -49,7 +50,7 @@ pub fn run() {
         )
         .plugin(
             tauri_plugin_window_state::Builder::new()
-                .with_denylist(&[windows::POPUP, windows::TOAST])
+                .with_denylist(&[windows::POPUP, windows::TOAST, windows::BUBBLE])
                 .build(),
         )
         .plugin(

@@ -38,6 +38,7 @@ Kaku is the native desktop sibling of the [TextBetter](https://github.com/klysma
 
 - **11 actions** — Rewrite, Correct, Professional, Appealing, Friendly, Simplify, Summarize, Detail It, Add Emojis, Shorten Text and Translate (20 target languages).
 - **Action palette** — press `Ctrl+Shift+Space` next to any selection; pick an action, review/edit the result, then **Replace** (or Copy).
+- **Selection button** (Windows) — select text with the mouse and a small Kaku button appears next to it; click it to open the palette with that selection. Turn it off in **Settings › Shortcuts**.
 - **Voice dictation** — a microphone button in the palette's text box. On Windows, pick live dictation with Windows speech recognition, Windows voice typing (the Win+H panel), or the AI provider (record, then transcribe with Gemini or an OpenAI-compatible `/audio/transcriptions` endpoint). Linux uses the AI provider.
 - **Direct shortcuts** — bind any action to its own shortcut (defaults: `Ctrl+Shift+1` Correct, `Ctrl+Shift+2` Translate, `Ctrl+Shift+3` Professional). The selection is replaced immediately; undo with `Ctrl+Z` in the app.
 - **Providers** — Google Gemini, or any **OpenAI-compatible** endpoint: OpenAI, Azure OpenAI / corporate gateways, OpenRouter, LiteLLM, and local **Ollama** / **LM Studio** (text never leaves your machine).

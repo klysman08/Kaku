@@ -156,6 +156,8 @@
   "shortcuts": {
     "popupTitle": "Action palette",
     "popupDesc": "Select text in any app and press this shortcut to open the palette next to the cursor. With nothing selected the palette opens empty so you can type or paste.",
+    "bubble": "Selection button",
+    "bubbleDesc": "Shows a small Kaku button next to text you select with the mouse (drag, double-click or Shift+click). Click it to open the palette with that selection.",
     "directTitle": "Direct shortcuts",
     "directDesc": "Apply the action to the selection and replace it right away, without the palette. Use Ctrl+Z in the app to undo.",
     "record": "Record",

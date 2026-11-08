@@ -33,6 +33,8 @@ export interface Settings {
   /** BCP-47 tag, "" = system speech language / auto-detect. */
   speechLanguage: string;
   openaiTranscriptionModel: string;
+  /** Kaku button next to freshly selected text (Windows). */
+  selectionBubble: boolean;
   paused: boolean;
   shortcuts: Shortcuts;
   customPrompts: Record<string, string>;

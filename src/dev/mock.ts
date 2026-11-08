@@ -51,6 +51,7 @@ const settings: Settings = {
   speechEngine: "native",
   speechLanguage: "",
   openaiTranscriptionModel: "gpt-4o-mini-transcribe",
+  selectionBubble: true,
   paused: false,
   shortcuts: {
     popup: "Ctrl+Shift+Space",

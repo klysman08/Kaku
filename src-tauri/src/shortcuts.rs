@@ -39,7 +39,8 @@ pub fn handle(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     }
 }
 
-/// (Re)register everything from settings. Returns the shortcuts that failed.
+/// (Re)register everything from settings, including the selection button. Returns the
+/// shortcuts that failed.
 pub fn apply(app: &AppHandle) -> Vec<ShortcutFailure> {
     let state = app.state::<AppState>();
     let settings = state.settings();
@@ -97,6 +98,8 @@ pub fn apply(app: &AppHandle) -> Vec<ShortcutFailure> {
 
     *state.shortcut_map.lock_safe() = map;
     *state.shortcut_failures.lock_safe() = failures.clone();
+    // The selection button follows the same settings and the same pause switch.
+    crate::bubble::apply(app);
     failures
 }
 
